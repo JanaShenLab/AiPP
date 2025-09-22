@@ -1,0 +1,482 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Parse a cysteine grouping report and summarize either:
+  - ROIS: each UID:ROI is analyzed as its own unit,
+  - UIDS: collapse all ROI records per UID (protein-level),
+  - REPS: each group (as an indivisible unit, labeled by its repr).
+
+Adds:
+  - --min-sources-any: filter by total unique sources that observed the unit,
+    regardless of vote direction.
+  - unique_uid_count / unique_roi_count columns.
+
+Examples
+--------
+# ROI-level, print only POSITIVE with at least 2 sources and 3 records
+python cysteine_report_parser_uid.py report.txt --units ROIS \
+  --atleast-grade POSITIVE:2S-3R --list
+
+# UID-level, at least 3 total unique sources observed it (any votes)
+python cysteine_report_parser_uid.py report.txt --units UIDS \
+  --min-sources-any 3 --list
+
+# Group-level, exact grade match (NEGATIVE 10S-10R)
+python cysteine_report_parser_uid.py report.txt --units REPS \
+  --filter-grade NEGATIVE:10S-10R --list
+
+# DIY filtering: label + minimums
+python cysteine_report_parser_uid.py report.txt --units ROIS \
+  --label POSITIVE --min-sources 1 --min-records 1 --list
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Iterable, Optional
+from collections import defaultdict
+from tqdm import tqdm
+
+
+# ---------- Data containers --------------------------------------------------
+
+@dataclass(frozen=True)
+class Record:
+    """One observed record line under a group."""
+    group_id: int
+    repr_id: str            # repr string from the group header
+    uid_roi: str            # e.g., "A0AVT1:17"
+    label_true: bool        # True for label=TRUE, False for label=FALSE
+    source: str             # e.g., "BB2023"
+    note: Optional[str]     # free text after note=
+    raw: str                # full raw line (for debugging)
+
+
+@dataclass
+class Group:
+    """A set of records that belong to a group header."""
+    group_id: int
+    repr_id: str
+    records: List[Record]
+
+
+# ---------- Parsing ----------------------------------------------------------
+
+GROUP_RE = re.compile(r"^Group\s+(\d+):\s*repr=([^\s]+)\s*$")
+REC_SPLIT_RE = re.compile(r"\s*,\s*")
+
+
+def parse_report(lines: Iterable[str]) -> Dict[int, Group]:
+    """
+    Parse the report text into Group objects keyed by group_id.
+    Assumes groups are well-formed blocks: a header followed by records.
+    """
+    groups: Dict[int, Group] = {}
+    cur_gid: Optional[int] = None
+    cur_repr: Optional[str] = None
+
+    for raw in lines:
+        line = raw.rstrip("\n")
+        if not line.strip():
+            continue
+
+        m = GROUP_RE.match(line)
+        if m:
+            cur_gid = int(m.group(1))
+            cur_repr = m.group(2)
+            groups[cur_gid] = Group(group_id=cur_gid,
+                                    repr_id=cur_repr,
+                                    records=[])
+            continue
+
+        if cur_gid is None or cur_repr is None:
+            continue
+
+        rec = parse_record_line(line, cur_gid, cur_repr)
+        if rec is None:
+            continue
+
+        # skip records that do not correspond to explicitly published observations
+        if (rec.source.upper() == "UNSEEN") or (rec.note and rec.note.upper() == "NMLB"):
+            continue
+        groups[cur_gid].records.append(rec)
+
+    return groups
+
+
+def parse_record_line(line: str, gid: int, repr_id: str) -> Optional[Record]:
+    """
+    Parse a single record line into a Record. Returns None if the line
+    cannot be parsed as a record.
+    """
+    s = line.strip()
+    if not s:
+        return None
+
+    parts = REC_SPLIT_RE.split(s)
+    if not parts:
+        return None
+
+    first = parts[0]
+    uid_roi = first.split()[0]
+    if ":" not in uid_roi:
+        return None
+
+    kv_strings = []
+    remainder = first[len(uid_roi):].strip()
+    if remainder:
+        kv_strings.append(remainder)
+    kv_strings.extend(parts[1:])
+
+    label_true = False
+    source = None
+    note = None
+
+    for kv in kv_strings:
+        kv = kv.strip()
+        if not kv or "=" not in kv:
+            continue
+        k, v = kv.split("=", 1)
+        k = k.strip().lower()
+        v = v.strip()
+        if k == "label":
+            label_true = v.upper() == "TRUE"
+        elif k == "source":
+            source = v
+        elif k == "note":
+            note = v
+
+    if source is None:
+        source = "NA"
+
+    return Record(group_id=gid,
+                  repr_id=repr_id,
+                  uid_roi=uid_roi,
+                  label_true=label_true,
+                  source=source,
+                  note=note,
+                  raw=line)
+
+
+# ---------- Analytics --------------------------------------------------------
+
+def decide_label(has_true: bool) -> str:
+    """If any TRUE exists -> POSITIVE; else -> NEGATIVE."""
+    return "POSITIVE" if has_true else "NEGATIVE"
+
+
+def grade_unit(records: List[Record]) -> Tuple[str, str, int, int, int, int]:
+    """
+    Compute winning label and grade for a unit (ROI, UID, or Group).
+
+    Returns:
+      winning_label: "POSITIVE" or "NEGATIVE"
+      grade: like "nS-mR"
+      n_sources: unique sources voting the winning label
+      m_records: record count voting the winning label
+      n_true: count of TRUE records
+      n_false: count of FALSE records
+    """
+    n_true = sum(1 for r in records if r.label_true)
+    n_false = len(records) - n_true
+    winning_label = decide_label(n_true > 0)
+    if winning_label == "POSITIVE":
+        win_records = [r for r in records if r.label_true]
+    else:
+        win_records = [r for r in records if not r.label_true]
+    sources = {r.source for r in win_records}
+    n_sources = len(sources)
+    m_records = len(win_records)
+    grade = f"{n_sources}S-{m_records}R"
+    return winning_label, grade, n_sources, m_records, n_true, n_false
+
+
+def _split_uid(uid_roi: str) -> Tuple[str, str]:
+    """Return (uid, roi) from 'UID:ROI'. ROI may contain colons? We split once."""
+    uid, roi = uid_roi.split(":", 1)
+    return uid, roi
+
+
+def summarize_rois(groups: Dict[int, Group]) -> List[Dict[str, str]]:
+    """ROI-level summaries across the entire file (pool same UID:ROI)."""
+    roi_to_records: Dict[str, List[Record]] = defaultdict(list)
+    for g in groups.values():
+        for r in g.records:
+            roi_to_records[r.uid_roi].append(r)
+
+    rows: List[Dict[str, str]] = []
+    for uid_roi in tqdm(sorted(roi_to_records), desc="ROIS"):
+        recs = roi_to_records[uid_roi]
+        (label, grade, ns, mr, n_t, n_f) = grade_unit(recs)
+        uid, _roi = _split_uid(uid_roi)
+        rows.append({
+            "unit_type": "ROI",
+            "unit_id": uid_roi,
+            "label": label,
+            "grade": grade,
+            "winning_sources": str(ns),
+            "winning_records": str(mr),
+            "n_true": str(n_t),
+            "n_false": str(n_f),
+            "total_records": str(len(recs)),
+            "unique_sources_all": str(len({r.source for r in recs})),
+            "unique_uid_count": "1",
+            "unique_roi_count": "1",
+            "uid": uid  # convenience column if you later want to pivot
+        })
+    return rows
+
+
+def summarize_uids(groups: Dict[int, Group]) -> List[Dict[str, str]]:
+    """
+    UID-level summaries: collapse all ROI records by protein UID.
+    UID is parsed as the substring before ':' in UID:ROI.
+    """
+    uid_to_records: Dict[str, List[Record]] = defaultdict(list)
+    for g in groups.values():
+        for r in g.records:
+            uid, _ = _split_uid(r.uid_roi)
+            uid_to_records[uid].append(r)
+
+    rows: List[Dict[str, str]] = []
+    for uid in tqdm(sorted(uid_to_records), desc="UIDS"):
+        recs = uid_to_records[uid]
+        (label, grade, ns, mr, n_t, n_f) = grade_unit(recs)
+        roi_ids = {rr.uid_roi for rr in recs}
+        rows.append({
+            "unit_type": "UID",
+            "unit_id": uid,
+            "label": label,
+            "grade": grade,
+            "winning_sources": str(ns),
+            "winning_records": str(mr),
+            "n_true": str(n_t),
+            "n_false": str(n_f),
+            "total_records": str(len(recs)),
+            "unique_sources_all": str(len({r.source for r in recs})),
+            "unique_uid_count": "1",
+            "unique_roi_count": str(len(roi_ids))
+        })
+    return rows
+
+
+def summarize_groups(groups: Dict[int, Group]) -> List[Dict[str, str]]:
+    """Group-level summaries. Each group is labeled by its repr."""
+    rows: List[Dict[str, str]] = []
+    for gid in tqdm(sorted(groups), desc="REPS"):
+        g = groups[gid]
+        (label, grade, ns, mr, n_t, n_f) = grade_unit(g.records)
+        uid_set = set()
+        roi_set = set()
+        for r in g.records:
+            uid, _ = _split_uid(r.uid_roi)
+            uid_set.add(uid)
+            roi_set.add(r.uid_roi)
+        rows.append({
+            "unit_type": "REP",
+            "unit_id": g.repr_id,
+            "group_id": str(g.group_id),
+            "label": label,
+            "grade": grade,
+            "winning_sources": str(ns),
+            "winning_records": str(mr),
+            "n_true": str(n_t),
+            "n_false": str(n_f),
+            "total_records": str(len(g.records)),
+            "unique_sources_all": str(len({r.source for r in g.records})),
+            "unique_uid_count": str(len(uid_set)),
+            "unique_roi_count": str(len(roi_set))
+        })
+    return rows
+
+
+# ---------- Filtering / Output ----------------------------------------------
+
+HEADER_COMMON = [
+    "unit_type", "unit_id", "label", "grade", "winning_sources",
+    "winning_records", "n_true", "n_false", "total_records",
+    "unique_sources_all", "unique_uid_count", "unique_roi_count"
+]
+
+HEADER_ROI = HEADER_COMMON + ["uid"]  # ROI table includes convenience 'uid' column
+HEADER_UID = HEADER_COMMON[:]         # same as common
+HEADER_REP = [
+    "unit_type", "unit_id", "group_id", "label", "grade",
+    "winning_sources", "winning_records", "n_true", "n_false",
+    "total_records", "unique_sources_all", "unique_uid_count",
+    "unique_roi_count"
+]
+
+
+def parse_grade_text(txt: str) -> Tuple[str, int, int]:
+    """
+    Parse text like 'POSITIVE:2S-3R' (case-insensitive).
+    Returns (label, sources, records).
+    """
+    t = txt.strip().upper()
+    if ":" not in t:
+        raise ValueError("Grade must be like LABEL:nS-mR (e.g. POSITIVE:1S-1R)")
+    lab, rest = t.split(":", 1)
+    m = re.match(r"^\s*(\d+)\s*S-\s*(\d+)\s*R\s*$", rest)
+    if not m:
+        raise ValueError("Grade must look like '2S-3R'")
+    s = int(m.group(1))
+    r = int(m.group(2))
+    if lab not in ("POSITIVE", "NEGATIVE"):
+        raise ValueError("Label must be POSITIVE or NEGATIVE")
+    return lab, s, r
+
+
+def apply_filters(rows: List[Dict[str, str]], args) -> List[Dict[str, str]]:
+    """
+    Keep only rows that match the requested filter criteria.
+    Priority: --filter-grade / --atleast-grade, else small knobs.
+    """
+    def row_vals(row):
+        lab = row["label"]
+        s = int(row["winning_sources"])
+        r = int(row["winning_records"])
+        return lab, s, r
+
+    if args.filter_grade:
+        want_lab, want_s, want_r = parse_grade_text(args.filter_grade)
+        return [row for row in rows
+                if row_vals(row) == (want_lab, want_s, want_r)]
+
+    if args.atleast_grade:
+        want_lab, min_s, min_r = parse_grade_text(args.atleast_grade)
+        keep = []
+        for row in rows:
+            lab, s, r = row_vals(row)
+            if lab == want_lab and s >= min_s and r >= min_r:
+                keep.append(row)
+        return keep
+
+    # Small knobs (all conditions must pass if provided)
+    keep = []
+    for row in rows:
+        lab, s, r = row_vals(row)
+        if args.label and lab != args.label.upper():
+            continue
+        if args.min_sources is not None and s < args.min_sources:
+            continue
+        if args.min_sources_any is not None and int(row["unique_sources_all"]) < args.min_sources_any:
+            continue
+        if args.min_records is not None and r < args.min_records:
+            continue
+        keep.append(row)
+    return keep
+
+
+def write_tsv(rows: List[Dict[str, str]],
+              header: List[str],
+              fh) -> None:
+    """Write a TSV with a fixed header order."""
+    fh.write("\t".join(header) + "\n")
+    for row in rows:
+        fh.write("\t".join(row.get(k, "") for k in header) + "\n")
+
+
+def write_list(rows: List[Dict[str, str]], fh) -> None:
+    """
+    Print a compact, human-friendly list:
+      UNITTYPE  UNIT_ID  LABEL  GRADE
+    """
+    for row in rows:
+        unit = row["unit_type"]
+        uid = row["unit_id"]
+        lab = row["label"]
+        grd = row["grade"]
+        fh.write(f"{unit:3s}  {uid:20s}  {lab:8s}  {grd}\n")
+
+
+# ---------- CLI --------------------------------------------------------------
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        description=(
+            "Parse a cysteine grouping report and summarize either "
+            "ROIS (each UID:ROI), UIDS (collapse ROI per protein UID), "
+            "or REPS (each group/representative). Optionally filter by grade."
+        )
+    )
+    p.add_argument("report",
+                   help="Path to input report text file.")
+    p.add_argument("--units", choices=["ROIS", "UIDS", "REPS"], required=True,
+                   help="Choose ROIS (per UID:ROI), UIDS (per UID), or REPS (per group).")
+    p.add_argument("-o", "--output", default="-",
+                   help="Output TSV path (default: stdout).")
+    # Filtering
+    p.add_argument("--filter-grade", default=None,
+                   help="Exact grade like 'POSITIVE:2S-3R'.")
+    p.add_argument("--atleast-grade", default=None,
+                   help="Minimum grade like 'NEGATIVE:1S-5R'.")
+    p.add_argument("--label", choices=["POSITIVE", "NEGATIVE"],
+                   help="Winning label to keep (used with small knobs).")
+    p.add_argument("--min-sources", type=int, default=None,
+                   help="Min unique sources for the winning label.")
+    p.add_argument("--min-sources-any", type=int, default=None,
+                   help="Min unique sources overall (any label) that observed the unit.")
+    p.add_argument("--min-records", type=int, default=None,
+                   help="Min records for the winning label.")
+    # Presentation
+    p.add_argument("--list", action="store_true",
+                   help="Print a compact list instead of TSV.")
+    return p
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    ap = build_arg_parser()
+    args = ap.parse_args(argv)
+
+    # Read the whole file first (makes progress bars predictable)
+    try:
+        with open(args.report, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except OSError as e:
+        sys.stderr.write(f"ERROR: cannot read file: {e}\n")
+        return 2
+
+    groups = parse_report(lines)
+
+    if args.units == "ROIS":
+        rows = summarize_rois(groups)
+        header = HEADER_ROI
+    elif args.units == "UIDS":
+        rows = summarize_uids(groups)
+        header = HEADER_UID
+    else:
+        rows = summarize_groups(groups)
+        header = HEADER_REP
+
+    # Apply filter criteria
+    try:
+        rows = apply_filters(rows, args)
+    except ValueError as e:
+        sys.stderr.write(f"ERROR in filter: {e}\n")
+        return 4
+
+    # Output
+    if args.list:
+        write_list(rows, sys.stdout)
+    else:
+        if args.output == "-" or args.output.lower() == "stdout":
+            write_tsv(rows, header, sys.stdout)
+        else:
+            try:
+                with open(args.output, "w", encoding="utf-8") as out:
+                    write_tsv(rows, header, out)
+            except OSError as e:
+                sys.stderr.write(f"ERROR: cannot write output: {e}\n")
+                return 3
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+

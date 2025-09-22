@@ -1,0 +1,1949 @@
+#!/usr/bin/env python3
+
+"""
+CLI entrypoint for the AIPP group‐distiller + resolver.
+
+Changes:
+  - FCPS subset (when --isolatefcps) now emitted *before* Filter-For subset.
+  - FCPS uses its own CB rules (--fcpscb / --fcpsnegcb) and its own
+    pos/neg requirements (--fcpsnoposrequired / --fcpsnonegrequired).
+  - After writing FCPS or Filter-For subsets, we mark *entire clusters*
+    for pruning, then prune them (unless --noautoprune), and finally
+    emit the distilled subset.
+  - Otherwise, behavior and all reporting are unchanged.
+"""
+
+import os
+import sys
+import json
+import argparse
+import atexit
+
+from collections import defaultdict
+from tqdm import tqdm
+
+from aipp.dataload import load_dataset
+from aipp.distill import write_cys_groups_report
+from aipp.grouping import (
+    filter_by_length,
+    build_needed,
+    find_missing,
+    build_nodes,
+    cluster_nodes,
+    write_missing_fasta,
+)
+from aipp.group_resolve import resolve_groups
+
+import operator
+# Operator functions for consensus‐by‐count thresholds
+_CB_OP_FUNCS = {
+    "==": operator.eq,
+    ">":  operator.gt,
+    ">=": operator.ge,
+    "<":  operator.lt,
+    "<=": operator.le,
+}
+
+
+def parse_args():
+    p = argparse.ArgumentParser(
+        description="AIPP Group Distiller + Resolve"
+    )
+    p.add_argument("--passthrough", type=str, default=None,
+                   help=("Comma-separated list of source codes whose labels "
+                         "should be taken *verbatim* from their own records, "
+                         "bypassing group-level consensus"))
+    p.add_argument(
+        "--dropall",
+        type=str,
+        default=None,
+        help="Comma-separated list of source codes whose records should be dropped immediately after loading"
+    )
+    p.add_argument("--dir", required=True,
+                   help="Directory containing lcr_*.dat files")
+    p.add_argument("--emb", required=True,
+                   help="Directory containing per-protein embeddings")
+    p.add_argument("--repr", type=str, default="0",
+                   help="Comma-separated list of ESM layers")
+    p.add_argument("--nmlb", type=str, default=None,
+                   help=("Comma-separated list of source codes to check: "
+                         "for each, prompt and optionally inject any cysteines "
+                         "in the full sequence that have no record"))
+    p.add_argument("--add_unseen", action="store_true",
+                   help=("After --nmlb (if any), scan for *all* C’s in each "
+                         "sequence that have no record from *any* source; "
+                         "prompt to add synthetic ‘UNSEEN’ records"))
+    p.add_argument("--identitythr", type=float, default=200.0,
+                   help="Sequence identity threshold (percent) >100 disables this")
+    p.add_argument("--compthr", type=float, default=0.3,
+                   help="Composite embedding similarity threshold")
+    p.add_argument("--window", type=int, default=21,
+                   help="Window size around each ROI (odd integer)")
+    p.add_argument("--threads", type=int, default=64,
+                   help="Number of threads for embedding loading")
+    p.add_argument("--report-dir", type=str, default=".",
+                   help="Directory to write reports")
+
+    p.add_argument("--ignore", type=str, default=None,
+                   help="Comma-separated list of source codes to ignore")
+    p.add_argument("--cache", type=str, default=None,
+                   help="Path to dataset cache JSON")
+    p.add_argument("--cluster-cache", type=str, default=None,
+                   help="Path to cluster cache JSON")
+    p.add_argument("--minlen", type=int, default=30,
+                   help="Minimum full-seq length to keep")
+    p.add_argument("--maxlen", type=int, default=2046,
+                   help="Maximum full-seq length to keep")
+
+    p.add_argument("--cb", type=str, default=None,
+                   help="Consensus rule, e.g. '>=2'")
+    p.add_argument("--negcb", type=str, default=None,
+                   help="Consensus rule for NEGative class."
+                        " If unset --cb will be used for both classes")
+    p.add_argument("--fcpscb", type=str, default=None,
+                   help="Consensus rule for FCPS positives (e.g. '>=2'). If unset, uses --cb")
+    p.add_argument("--fcpsnegcb", type=str, default=None,
+                   help="Consensus rule for FCPS negatives. If unset, uses --fcpscb or --negcb")
+    p.add_argument("--prioritize", type=str, default=None,
+                   help="Comma-separated list of sources to prioritize")
+    p.add_argument("--novote", type=str, default=None,
+                   help="Comma-separated list of sources to ignore in CB votes")
+    p.add_argument("--repsonly", action="store_true",
+                   help="Emit only each group’s representative")
+    p.add_argument("--filterfor", type=str, default=None,
+                   help="Isolate output for this source (e.g. LS2024)")
+    p.add_argument("--dedup-priority", type=str, default=None,
+                   help="Comma-separated list of sources to use for pre-clustering deduplication")
+
+    p.add_argument("--noposrequired", action="store_true",
+                   help="Omit requirement of ≥1 positive label")
+    p.add_argument("--nonegrequired", action="store_true",
+                   help="Omit requirement of ≥1 negative label")
+    p.add_argument("--filternoposrequired", action="store_true",
+                   help="Omit requirement of ≥1 positive label for filterfor subset")
+    p.add_argument("--filternonegrequired", action="store_true",
+                   help="Omit requirement of ≥1 negative label for filterfor subset")
+
+    p.add_argument("--fcpsnoposrequired", action="store_true",
+                   help="Omit requirement of ≥1 positive label for the fcps")
+    p.add_argument("--fcpsnonegrequired", action="store_true",
+                   help="Omit requirement of ≥1 negative label for the fcps")
+    p.add_argument(
+        "--prune_all_filtered",
+        action="store_true",
+        help=(
+            "Prune all clusters containing any record from the filterfor "
+            "source(s), even if those UIDs do NOT pass the pos/neg filters"
+        )
+    )
+    p.add_argument("--isolatefcps", action="store_true",
+                   help="Separately emit fully characterized proteins")
+    p.add_argument("--noautoprune", action="store_true",
+                   help="Disable automatic pruning of entire clusters")
+    p.add_argument("--unmaskfiltered", action="store_true",
+                   help="Before filtering, treat all masked (2) labels in the Filter-For subset as negatives (0)")
+    p.add_argument(
+        "--uniprotdb", type=str, default=None,
+        help="Path to a local UniProt FASTA (e.g. uniprot_sprot.fasta) to use instead of downloading"
+    )
+    p.add_argument(
+        "--nostrictvalidation",
+        action="store_true",
+        help=(
+            "When provided, only drop individual records on ROI‐mismatch; "
+            "drop the entire UID only if none of its ROIs remain valid. "
+            "By default (strict validation), any non‐expanded mismatch "
+            "will remove the whole UID immediately."
+        ),
+    )
+    p.add_argument(
+        "--unmaskroi",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated list of one-letter amino acids whose masked ROI "
+            "(label=2) should be treated as negative (0) before Filter-For"
+        )
+    )
+    p.add_argument(
+        "--masknonreps",
+        action="store_true",
+        help="Mask all non-representative ROI labels to '2' (requires --repsonly)"
+    )
+    p.add_argument(
+        "--max_pos_per_prot",
+        type=int,
+        default=None,
+        help="Exclude any protein with more than this many positive labels from the final distilled output"
+    )
+    p.add_argument(
+        "--min_src_per_pos",
+        type=int,
+        default=1,
+        help="Minimum number of distinct sources voting for a positive group label; else mask"
+    )
+    p.add_argument(
+        "--min_src_per_neg",
+        type=int,
+        default=1,
+        help="Minimum number of distinct sources voting for a negative group label; else mask"
+    )
+    p.add_argument(
+        "--isolatefilteredonly", action="store_true",
+        help="With --isolatefcps and --filterfor: only include FCPS proteins whose clusters would be pruned by the Filter-For removal; FCPS itself will not expand pruning."
+    )
+
+    p.add_argument(
+        "--passthrough_require_posneg",
+        action="store_true",
+        help=(
+            "With --passthrough: still require ≥1 positive and ≥1 negative "
+            "for Filter-For subsets whose source is in --passthrough. "
+            "Uses passthrough labels (not consensus)."
+        )
+    )
+
+    args = p.parse_args()
+
+    if args.masknonreps and not args.repsonly:
+        p.error("--masknonreps requires --repsonly")
+
+    # dependency checks for the new flag
+    if args.passthrough_require_posneg and not args.passthrough:
+        p.error("--passthrough_require_posneg requires --passthrough")
+ 
+    # dependency checks for the new flag
+    if args.isolatefilteredonly:
+        if not args.isolatefcps:
+            p.error("--isolatefilteredonly requires --isolatefcps")
+        if not args.filterfor:
+            p.error("--isolatefilteredonly requires --filterfor")
+
+    return args
+
+def write_precluster_records(path, records):
+    """
+    Write the records that will go into clustering as a TSV that matches the
+    input lcr_*.dat style. Also print summary stats to stdout.
+
+    Columns written:
+      uid, 1idx-roi, R, exp_thr, exp_bin, source, note
+    """
+    def _fmt_R(val):
+        try:
+            return f"{float(val):.2f}"
+        except Exception:
+            return str(val) if val is not None else ""
+
+    with open(path, "w") as out:
+        out.write("uid\t1idx-roi\tR\texp_thr\texp_bin\tsource\tnote\n")
+        for r in records:
+            uid = r.get("uid", "")
+            pos = r.get("mapped_roi", r.get("roi", ""))
+            R = _fmt_R(r.get("R", ""))
+            exp_thr = r.get("exp_thr", "")
+            exp_bin = "TRUE" if r.get("exp_bin", False) else "FALSE"
+            source = r.get("source", "")
+            note = r.get("note", "")
+            out.write(
+                f"{uid}\t{pos}\t{R}\t{exp_thr}\t{exp_bin}\t{source}\t{note}\n"
+            )
+
+    # ── Stats for stdout ──────────────────────────────────────────────
+    total_records = len(records)
+    uniq_pairs = {(r.get("uid", ""), r.get("mapped_roi", r.get("roi", "")))
+                  for r in records}
+    uniq_uids = {r.get("uid", "") for r in records}
+    unseen_count = sum(1 for r in records if r.get("source") == "UNSEEN")
+
+    print(f"@Precluster records written: {path}")
+    print(f"  Total records       : {total_records}")
+    print(f"  Unique UID:ROI pairs: {len(uniq_pairs)}")
+    print(f"  Unique UIDs         : {len(uniq_uids)}")
+    print(f"  Records from UNSEEN : {unseen_count}\n", flush=True)
+
+
+def oldwrite_precluster_records(path, records):
+    """
+    Write the records that will go into clustering as a TSV that matches the
+    input lcr_*.dat style. We always prefer the mapped ROI if present.
+
+    Columns:
+      uid, 1idx-roi, R, exp_thr, exp_bin, source, note
+
+    - exp_bin is written as TRUE/FALSE for readability (like inputs).
+    - R is written with two decimals when numeric, else as-is.
+    - Missing fields are written as empty strings.
+    """
+    def _fmt_R(val):
+        # Write R with 2 decimals if it's a number; else return as string.
+        try:
+            return f"{float(val):.2f}"
+        except Exception:
+            return str(val) if val is not None else ""
+
+    with open(path, "w") as out:
+        out.write("uid\t1idx-roi\tR\texp_thr\texp_bin\tsource\tnote\n")
+        for r in records:
+            uid = r.get("uid", "")
+            # Prefer mapped_roi; fallback to roi so we always have a position.
+            pos = r.get("mapped_roi", r.get("roi", ""))
+            R = _fmt_R(r.get("R", ""))
+            exp_thr = r.get("exp_thr", "")
+            # Inputs use TRUE/FALSE; mirror that exactly.
+            exp_bin = "TRUE" if r.get("exp_bin", False) else "FALSE"
+            source = r.get("source", "")
+            note = r.get("note", "")
+            out.write(
+                f"{uid}\t{pos}\t{R}\t{exp_thr}\t{exp_bin}\t{source}\t{note}\n"
+            )
+
+
+def parse_cb_rule(cb_str):
+    """
+    Parse a string like '>=2' into (op, int). E.g. '>=2' → (">=", 2).
+    """
+    for op in ("==", ">=", "<=", ">", "<"):
+        if cb_str.startswith(op):
+            try:
+                val = int(cb_str[len(op):].strip())
+            except ValueError:
+                raise ValueError(f"Cannot parse threshold in '{cb_str}'")
+            return op, val
+    raise ValueError(f"Unsupported cb rule: '{cb_str}'")
+
+
+def build_header_map(records):
+    """
+    Reconstruct headers for uid_sequences.fasta.
+    Returns dict: UID → header_line (without leading '>').
+    """
+    rois_grouped = defaultdict(list)
+    for r in records:
+        uid = r["uid"]
+        orig = r["roi"]
+        mapped = r.get("mapped_roi", orig)
+        rois_grouped[uid].append((orig, mapped))
+
+    header_map = {}
+    for uid, pairs in rois_grouped.items():
+        unique_pairs = sorted({(o, m) for (o, m) in pairs},
+                              key=lambda x: x[1])
+        mapped_list = [str(m) for (_, m) in unique_pairs]
+        roi_str = ",".join(mapped_list)
+        mapping_list = [f"{o}->{m}" for (o, m) in unique_pairs]
+        mapping_str = ",".join(mapping_list)
+        roi_type = "LC3D" if "-" in uid else "ABPP"
+        header_map[uid] = (
+            f"{uid} {roi_type}={roi_str} MAPS={mapping_str}"
+        )
+    return header_map
+
+
+def write_fasta_labels(prefix, uids, headers, seq_map, label_map):
+    """
+    Write prefix.fasta and prefix.label for exactly those UIDs.
+    """
+    ffa = f"{prefix}.fasta"
+    flb = f"{prefix}.label"
+    # FASTA
+    with open(ffa, "w") as out_fa:
+        for uid in sorted(uids):
+            hdr = headers.get(uid)
+            seq = seq_map.get(uid)
+            if not hdr or not seq:
+                continue
+            out_fa.write(f">{hdr}\n{seq}\n")
+    # LABEL
+    with open(flb, "w") as out_lb:
+        for uid in sorted(uids):
+            hdr = headers.get(uid)
+            digits = "".join(label_map.get(uid, []))
+            if not hdr or not digits:
+                continue
+            out_lb.write(f">{hdr}\n{digits}\n")
+
+
+def main():
+    args = parse_args()
+
+    # ── Minimal: tee stdout to a dedup log in report_dir ───────────────
+    os.makedirs(args.report_dir, exist_ok=True)
+    log_path = os.path.join(args.report_dir, "distiller.log")
+    class _Tee:
+        def __init__(self, *streams):
+            self.streams = streams
+        def write(self, data):
+            for s in self.streams:
+                s.write(data)
+            # keep prints appearing promptly
+            for s in self.streams:
+                try: s.flush()
+                except Exception: pass
+        def flush(self):
+            for s in self.streams:
+                try: s.flush()
+                except Exception: pass
+    _orig_stdout = sys.stdout
+    _log_fh = open(log_path, "w", buffering=1)
+    sys.stdout = _Tee(_orig_stdout, _log_fh)
+    atexit.register(lambda: (_log_fh.close(), setattr(sys, "stdout", _orig_stdout)))
+    print(f"# dedup log → {log_path}")
+
+    # ── NEW: parse dropall sources ───────────────────────────────────
+    if args.dropall:
+        dropall_srcs = {s.strip() for s in args.dropall.split(",") if s.strip()}
+    else:
+        dropall_srcs = set()
+
+    # if user supplied a local UniProt FASTA, preload it into the distill module
+    if args.uniprotdb:
+        import aipp.distill as _distill
+        _distill.set_uniprotdb(args.uniprotdb)
+
+    # global sets we’ll need everywhere
+    if args.passthrough:
+        passthrough_srcs = {s.strip() for s in args.passthrough.split(",") if s.strip()}
+    else:
+        passthrough_srcs = set()
+
+    os.makedirs(args.report_dir, exist_ok=True)
+
+    # parse into a list of source‐codes
+    filterfor_list = [s.strip() for s in (args.filterfor or "").split(',') if s.strip()]
+
+    # ── 1) Cache logic ───────────────────────────────────────────────────
+    if args.cache:
+        cache_path = args.cache
+    else:
+        cache_path = os.path.join(args.report_dir, "dataset_cache.json")
+
+    if os.path.isfile(cache_path):
+        print(f"Found existing cache at: {cache_path}", flush=True)
+        choice = input(
+            "  [U]se cache, [O]verwrite cache, or [N] (new --cache)? "
+        ).strip().lower()
+        if choice == "u":
+            print("Loading records from cache...", flush=True)
+            with open(cache_path) as cf:
+                records = json.load(cf)
+            print(f"Loaded {len(records)} records.", flush=True)
+            uniq_cys = {(r["uid"], r["roi"]) for r in records}
+            uniq_uids = {r["uid"] for r in records}
+            print(
+                f"Counted {len(uniq_cys)} cysteines across "
+                f"{len(uniq_uids)} proteins.",
+                flush=True,
+            )
+            print()
+        elif choice == "o":
+            print("Overwriting cache with fresh data...", flush=True)
+            records = None
+        else:
+            print(
+                "Please re-run with a different --cache path. Exiting.",
+                flush=True,
+            )
+            sys.exit(0)
+    else:
+        records = None
+
+    # ── 2) Fetch & validate sequences (if no cache) ───────────────────────
+    if records is None:
+        # report whether we're using local FASTA or online REST for UniProt lookups
+        from aipp.distill import _UNIPROT_LOCAL_DB
+        lookup = "local FASTA" if _UNIPROT_LOCAL_DB is not None else "UniProt REST"
+        print(
+            f"WE ARE Fetching & validating sequences using {lookup} "
+            "(this may take a few minutes)…",
+            flush=True,
+        )
+
+        records, raw_count, accepted_pairs = load_dataset(
+            data_dir=args.dir,
+            report_dir=args.report_dir,
+            window=args.window,
+            ignore=args.ignore,
+            threads=args.threads,
+            nostrict=args.nostrictvalidation,
+        )
+        passed_count = len(records)
+        passed_uids = {r["uid"] for r in records}
+        passed_uid_count = len(passed_uids)
+
+        print(
+            f"Fetched & validated {passed_count} out of {raw_count} total "
+            f"records; {accepted_pairs} unique UID,ROI pairs and "
+            f"{passed_uid_count} unique UIDs passed validation.\n",
+            flush=True,
+        )
+        try:
+            with open(cache_path, "w") as cf:
+                json.dump(records, cf)
+            print(f"Cache written to: {cache_path}\n", flush=True)
+        except Exception as e:
+            print(
+                f"Warning: could not write cache {cache_path}: {e}\n",
+                flush=True,
+            )
+
+    # ── NEW: drop all records from unwanted sources ─────────────────────
+    if dropall_srcs:
+        before = len(records)
+        records = [r for r in records if r["source"] not in dropall_srcs]
+        dropped = before - len(records)
+        print(
+            f"Dropped {dropped} records from sources: "
+            f"{', '.join(sorted(dropall_srcs))}", flush=True
+        )
+
+    # ── Build UID → full_sequence map from in-memory records ─────────────
+
+    # Track starting UID population for dedup summary
+    uids_before_dedup = {r["uid"] for r in records}
+
+    seq_map = {}
+    for r in records:
+        uid = r["uid"]
+        seq = r.get("sequence", "")
+        if seq and uid not in seq_map:
+            seq_map[uid] = seq
+
+    # ── Pre-clustering: unify duplicate sequences under one UID ─────
+    from collections import defaultdict
+
+    if args.dedup_priority:
+        dedup_priority_srcs = {s.strip() for s in args.dedup_priority.split(",") if s.strip()}
+    else:
+        dedup_priority_srcs = set()
+
+    # map each UID → set of its sources (used for priority tiebreaks)
+    uid_sources = defaultdict(set)
+    for r in records:
+        uid_sources[r["uid"]].add(r["source"])
+
+    # group UIDs by their full sequence (exact match stage)
+    seq_to_uids = defaultdict(list)
+    for uid in {r["uid"] for r in records}:
+        seq = seq_map.get(uid)
+        if seq:
+            seq_to_uids[seq].append(uid)
+
+    remap = {}
+
+    def _uid_priority_key(u):
+        """Prefer UIDs that contain prioritized sources; then lexicographic UID."""
+        has_priority = 1 if (uid_sources[u] & dedup_priority_srcs) else 0
+        # sort so True (1) comes first → negate; then UID as tiebreaker
+        return (-has_priority, u)
+
+    # 1) Exact-sequence dedup (as before), deterministic w/ priority
+    for seq, uids in seq_to_uids.items():
+        if len(uids) < 2:
+            continue
+        keep = sorted(uids, key=_uid_priority_key)[0]
+        dropped = [u for u in uids if u != keep]
+        for u in dropped:
+            remap[u] = keep
+      # print(
+      #     f"Dedup[exact]: len={len(seq)} → keep '{keep}', "
+      #     f"merge {len(dropped)}: {', '.join(sorted(dropped))}",
+      #     flush=True
+      # )
+        print(f"Dedup[exact]: len={len(seq)} keep='{keep}' "
+              f"merged={len(dropped)} dropped=[{', '.join(sorted(dropped))}]")
+
+    # apply the exact remapping to every record now
+    if remap:
+        for r in records:
+            if r["uid"] in remap:
+                r["uid"] = remap[r["uid"]]
+
+    # ── rebuild seq_map to reflect exact merges ─────────────────────
+    new_seq_map = {}
+    for uid, seq in seq_map.items():
+        final_uid = remap.get(uid, uid)
+        new_seq_map.setdefault(final_uid, seq)
+    seq_map = new_seq_map
+
+    # ── 1b) Build canonical (sequence → canonical UID) after exact merges
+    canon_for_seq = {}
+    for seq, uids in seq_to_uids.items():
+        # choose canonical using the same priority logic
+        keep = sorted([remap.get(u, u) for u in uids], key=_uid_priority_key)[0]
+        canon_for_seq[seq] = keep
+
+    # ── 2) Subsequence dedup (shorter is an exact substring of longer) ──
+    # Work on unique sequences only; map shorter → longest container (then priority)
+    unique_seqs = sorted({s for s in canon_for_seq.keys()}, key=len, reverse=True)  # longest first
+    seq_len = {s: len(s) for s in unique_seqs}
+
+    # Build a list of (seq, keep_uid) for fast candidate lookup among longer seqs
+    long_seq_keep = [(s, canon_for_seq[s]) for s in unique_seqs]
+
+    # For quick skipping: which UIDs already map to someone else
+    already_mapped_to = set(remap.values())
+    # Reverse map: UID → its canonical sequence
+    uid_to_seq = {}
+    for seq, keep_uid in canon_for_seq.items():
+        uid_to_seq[keep_uid] = seq
+
+    # Helper to pick the best container among candidates: prefer longest, then priority
+    def _best_container(candidates):
+        # candidates: list of tuples (long_seq, keep_uid, offset)
+        # sort by: longest length first, then priority key on keep_uid, then sequence as last tiebreaker
+        return sorted(
+            candidates,
+            key=lambda x: (-len(x[0]), _uid_priority_key(x[1]), x[0])
+        )[0]
+
+    # Build a mapping from any non-canonical UID to its container UID with offset
+    subseq_remap = {}  # uid_short -> (uid_long, offset1idx)
+
+    # Iterate from shorter to longer so we only try to remap shorts
+    for short_seq in sorted(unique_seqs, key=len):
+        short_keep = canon_for_seq[short_seq]
+
+        # Skip if this "short_keep" is actually one of the longest or already mapped by exact stage
+        # (We only remap if there exists a unique container in a strictly longer sequence)
+        candidates = []
+        for long_seq, long_keep in long_seq_keep:
+            if len(long_seq) <= len(short_seq):
+                break  # because long_seq_keep is sorted descending
+            # look for a unique occurrence to avoid ambiguous ROI offset
+            first = long_seq.find(short_seq)
+            if first == -1:
+                continue
+            last = long_seq.rfind(short_seq)
+            if first != last:
+                # occurs multiple times — skip this container (ambiguous)
+                continue
+            # We found a unique container
+            candidates.append((long_seq, long_keep, first + 1))  # store 1-based offset
+
+        if not candidates:
+            continue
+
+        # choose the best container
+        best_long_seq, best_keep_uid, offset_1idx = _best_container(candidates)
+
+        if short_keep == best_keep_uid:
+            # already the same canonical — nothing to do
+            continue
+
+        # record remapping for ALL UIDs that had the short_seq canonical
+        # (i.e., everyone whose final UID == short_keep at this point)
+        subseq_remap[short_keep] = (best_keep_uid, offset_1idx)
+
+       #print(
+       #    f"Dedup[subseq]: len {len(short_seq)} → '{short_keep}' "
+       #    f"maps into len {len(best_long_seq)} → '{best_keep_uid}' "
+       #    f"(unique offset +{offset_1idx - 1})",
+       #    flush=True
+       #)
+        print(f"Dedup[subseq]: short='{short_keep}' len={len(short_seq)} "
+              f"→ parent='{best_keep_uid}' parent_len={len(best_long_seq)} "
+              f"offset=+{offset_1idx-1} (unique)")
+
+    # Apply the subsequence remap to records and adjust ROI indices by the offset
+    # NOTE: We only adjust if a unique offset was found (as enforced above).
+    if subseq_remap:
+        # Build a quick mapping of any UID that should map (including earlier exact remaps)
+        # Example: if a UID had been remapped to short_keep in the exact stage, we want that
+        # consolidated UID to map to best_keep_uid here as well.
+        # Current records already have exact remap applied, so compare on r["uid"] directly.
+        for r in records:
+            uid = r["uid"]
+            if uid in subseq_remap:
+                new_uid, off = subseq_remap[uid]
+                r["uid"] = new_uid
+                # Adjust ROI positions (1-based) so they refer to the longer sequence
+                # Update both roi and mapped_roi if present.
+                try:
+                    if "roi" in r and isinstance(r["roi"], int):
+                        r["roi"] = r["roi"] + (off - 1)
+                    if "mapped_roi" in r and isinstance(r["mapped_roi"], int):
+                        r["mapped_roi"] = r["mapped_roi"] + (off - 1)
+                except Exception:
+                    # If anything looks off, leave indices unchanged (fail-safe)
+                    pass
+
+        # Rebuild seq_map again, now that some UIDs point to longer parents
+        # Keep the sequence of the longer (container) UID
+        new_seq_map = {}
+        for uid, seq in seq_map.items():
+            # If this uid is a short_keep that maps into a best_keep, drop its sequence
+            if uid in subseq_remap:
+                # do not carry this short sequence forward
+                continue
+            new_seq_map[uid] = seq
+        # Ensure container UIDs are present with their sequences
+        for _, (parent_uid, _) in subseq_remap.items():
+            if parent_uid in uid_to_seq:
+                new_seq_map[parent_uid] = uid_to_seq[parent_uid]
+        seq_map = new_seq_map
+
+    # --- Sync sequences after subsequence remap ---
+    # Ensure each record's full sequence matches its (possibly remapped) UID,
+    # so downstream length filtering uses the correct parent sequence length.
+    for r in records:
+        seq = seq_map.get(r["uid"])
+        if seq:
+            r["sequence"] = seq
+
+    # ── DEDUP SUMMARY ────────────────────────────────────────────────────
+    # Count UIDs lost due to deduplication, split by identical vs subsequence.
+    # We track:
+    #   - exact_lost_uids: UIDs remapped during exact (identical-sequence) merge
+    #   - subseq_lost_uids: canonical UIDs remapped during subsequence merge
+    #   - totals before/after dedup for sanity
+    try:
+        # UIDs present before dedup started
+        # (captured the first time we enter dedup; if not present yet, build now)
+        uids_before_dedup
+    except NameError:
+        uids_before_dedup = {r["uid"] for r in records}
+
+    exact_lost_uids   = set(remap.keys())
+    subseq_lost_uids  = set(subseq_remap.keys())
+    total_dedup_lost  = len(exact_lost_uids) + len(subseq_lost_uids)
+    uids_after_dedup  = {r["uid"] for r in records}
+
+    print("@Dedup summary:")
+    print(f"  UIDs before dedup                 : {len(uids_before_dedup)}")
+    print(f"  Lost to identical-sequence merge  : {len(exact_lost_uids)}")
+    print(f"  Lost to partial (subsequence)     : {len(subseq_lost_uids)}")
+    print(f"  Total UIDs lost to dedup          : {total_dedup_lost}")
+    print(f"  UIDs after dedup                  : {len(uids_after_dedup)}\n", flush=True)
+
+
+    # ── CLEANUP: drop orphaned multi‐value records ────────────────────────
+    # find all UIDs that have at least one non-(mv) record
+    good_uids = {r["uid"] for r in records if not r.get("orig_multi_value", False)}
+
+    # collect all orphaned multi‑value records
+    dropped_mv = [
+        r for r in records
+        if r.get("orig_multi_value", False) and r["uid"] not in good_uids
+    ]
+
+    # write them out for inspection
+    dropped_mv_path = os.path.join(args.report_dir, "dropped_mv.txt")
+    with open(dropped_mv_path, "w") as out:
+        for rec in dropped_mv:
+            out.write(json.dumps(rec) + "\n")
+
+    before = len(records)
+    records = [
+        r for r in records
+        # keep it if it’s not a multi‐value split, or
+        # if it *is* multi‐value but its UID appears in good_uids
+        if not (r.get("orig_multi_value", False) and r["uid"] not in good_uids)
+    ]
+    dropped = before - len(records)
+    print(
+        f"[cleanup] Dropped {dropped} orphaned multi‑value records; "
+        f"details written to {dropped_mv_path}",
+        flush=True
+    )
+
+    # ── Sync seq_map to surviving UIDs (prevents stale UIDs from affecting counts) ──
+    live_uids = {r["uid"] for r in records}
+    seq_map = {uid: seq for uid, seq in seq_map.items() if uid in live_uids}
+
+
+    # ── SANITY CHECK: after dedup‑merge ───────────────────────────────
+    uniq_pairs = {(r["uid"], r["roi"]) for r in records}
+    num_pairs = len(uniq_pairs)
+    total_cys = sum(seq.upper().count("C") for seq in seq_map.values())
+    # baseline missing
+    missing_after_merge = total_cys - num_pairs
+    # also seed post‑NMLB variable in case --nmlb is not used
+    missing_after_nmlb = missing_after_merge
+
+    print(f"[sanity] Unique UID,ROI pairs = {num_pairs}")
+    print(f"[sanity] Total cysteines     = {total_cys}")
+    print(f"[sanity] Missing records     = {missing_after_merge}\n")
+
+    # ── detect cysteines with NO record for the given source(s) ────
+    if args.nmlb:
+        nmlbcnt=0
+        from collections import defaultdict
+        nmlb_srcs   = {s.strip() for s in args.nmlb.split(",") if s.strip()}
+        missing_map = defaultdict(lambda: defaultdict(list))
+
+        # build up missing_map[src][uid] = [pos1, pos2, …]
+        for src in nmlb_srcs:
+            # all UIDs that have _any_ record from this source
+            uids_src = {r["uid"] for r in records if r["source"] == src}
+            for uid in sorted(uids_src):
+                seq = seq_map.get(uid, "")
+                # every C-position in the full sequence
+                all_cys = {i+1 for i, aa in enumerate(seq) if aa.upper() == "C"}
+                # the ROIs we actually saw in `records` for this source
+                rec_cys = {
+                    r.get("mapped_roi", r["roi"])
+                    for r in records
+                    if r["source"] == src and r["uid"] == uid
+                }
+                # any C’s never recorded?
+                miss = sorted(all_cys - rec_cys)
+                if miss:
+                    nmlbcnt+=1
+                    missing_map[src][uid] = miss
+           #         print(f"[nmlb]  source={src}, uid={uid}: missing records for C at positions {miss}", flush=True)
+
+        if missing_map:
+            choice = input(
+                f"[nmlb] {nmlbcnt} missing cysteine records detected; "
+                "[C]ontinue, [A]dd missing records, or [E]xit? "
+            ).strip().lower()
+            if choice in ("e", "exit"):
+                print("Exiting for investigation.", flush=True)
+                sys.exit(1)
+            elif choice in ("a", "add"):
+                # helper to build window_seq of length args.window, padding with 'X'
+                def build_window(seq, pos, w):
+                    half = w // 2
+                    start = max(0, pos-1-half)
+                    end   = pos-1+half+1
+                    win   = seq[start:end]
+                    if len(win) < w:
+                        win = win.ljust(w, "X")
+                    return win
+
+                # inject one synthetic record per missing C
+                for src, uids in missing_map.items():
+                    for uid, positions in uids.items():
+                        seq = seq_map.get(uid, "")
+                        for pos in positions:
+                            new_rec = {
+                                "uid":         uid,
+                                "roi":         pos,
+                                "mapped_roi":  pos,
+                                "source":      src,
+                                "sequence":    seq,
+                                "exp_bin":     False,
+                                "exp_thr":     0,
+                                "R":           999,
+                                "note":        "NMLB",
+                                "window_seq":  build_window(seq, pos, args.window),
+                            }
+                            records.append(new_rec)
+                print("[nmlb] Injected missing records (note=‘NMLB’, R=999); continuing.", flush=True)
+            else:
+                print("Unrecognized choice; exiting.", flush=True)
+                sys.exit(1)
+
+        # ── SANITY 1: after NMLB injection ────────────────────────────────────
+        uniq_pairs = {(r["uid"], r["roi"]) for r in records}
+        num_pairs = len(uniq_pairs)
+        total_cys = sum(seq.upper().count("C") for seq in seq_map.values())
+        missing_after_nmlb = total_cys - num_pairs
+        print(
+            f"[sanity] after NMLB: unique UID,ROI pairs = {num_pairs}, "
+            f"total cysteines = {total_cys}, missing = {missing_after_nmlb}"
+        )
+        print()
+    # ──────────────────────────────────────────────────────────────────────
+
+
+    # ── --add_unseen (inject any C with no record from *any* source) ──
+    if args.add_unseen:
+        from collections import defaultdict
+
+        # helper to build the window_seq around pos
+        def build_window(seq, pos, w):
+            half = w // 2
+            start = max(0, pos-1-half)
+            end   = pos-1+half+1
+            win   = seq[start:end]
+            if len(win) < w:
+                win = win.ljust(w, "X")
+            return win
+
+        # ── Eligibility: only consider UIDs that have at least one non-UNSEEN record ──
+        uids_with_non_unseen = {
+            r["uid"] for r in records
+            if r.get("source") != "UNSEEN"
+        }
+        # We will restrict all add_unseen logic (and sanity counts) to this set.
+
+        # 1) build a map of all recorded ROIs per UID
+        recs_by_uid = defaultdict(set)
+        for r in records:
+            uid = r["uid"]
+            recs_by_uid[uid].add(r.get("mapped_roi", r["roi"]))
+
+        # 2) find *all* C positions for each eligible UID and see which lack any record
+        missing_unseen = defaultdict(list)
+        for uid, seq in seq_map.items():
+            if uid not in uids_with_non_unseen:
+                continue
+            all_cys = {i+1 for i, aa in enumerate(seq) if aa.upper() == "C"}
+            rec_cys = recs_by_uid.get(uid, set())
+            miss    = sorted(all_cys - rec_cys)
+            if miss:
+                missing_unseen[uid] = miss
+        # 3) if there are any, prompt you (compute expected missing over eligible UIDs)
+        total_unseen = sum(len(v) for v in missing_unseen.values())
+        prots = len(missing_unseen)
+        eligible_total_cys = sum(
+            seq.upper().count("C")
+            for uid, seq in seq_map.items()
+            if uid in uids_with_non_unseen
+        )
+        eligible_pairs_seen = len({
+            (r["uid"], r["roi"])
+            for r in records
+            if r["uid"] in uids_with_non_unseen
+        })
+        expected_missing_eligible = eligible_total_cys - eligible_pairs_seen
+        print(
+            f"[sanity] before add_unseen: missing_unseen found = {total_unseen}, "
+            f"expected = {expected_missing_eligible}"
+        )
+        if total_unseen > 0:
+            #for uid, pos_list in missing_unseen.items():
+            #    print(f"[add_unseen]  {uid}: positions {pos_list}", flush=True)
+
+            print(f"[sanity] add_unseen found     = {total_unseen}")
+            print(f"[sanity] expected missing     = {expected_missing_eligible}")
+            print(f"[sanity] consistency check    = {total_unseen == expected_missing_eligible}\n")
+            print(f"[add_unseen] Found {total_unseen} cysteines across {prots} proteins with NO records.", flush=True)
+
+            choice = input(
+                "[add_unseen] [C]ontinue, [A]dd missing, or [E]xit? "
+            ).strip().lower()
+            if choice in ("e", "exit"):
+                print("Exiting per user request.", flush=True)
+                sys.exit(1)
+            elif choice in ("a", "add"):
+                # 4) inject one synthetic record per missing cysteine
+                for uid, pos_list in missing_unseen.items():
+                    seq = seq_map[uid]
+                    for pos in pos_list:
+                        new_rec = {
+                            "uid":        uid,
+                            "roi":        pos,
+                            "mapped_roi": pos,
+                            "sequence":   seq,
+                            "source":     "UNSEEN",
+                            "exp_bin":    False,
+                            "exp_thr":    0,
+                            "R":          -1,
+                            "note":       "unlabeled_cys",
+                            "window_seq": build_window(seq, pos, args.window),
+                        }
+                        records.append(new_rec)
+                print("[add_unseen] Injected all UNSEEN records; continuing.", flush=True)
+            else:
+                print("Unrecognized choice; exiting.", flush=True)
+                sys.exit(1)
+
+        # ── SANITY 3: after UNSEEN injection ─────────────────────────────────
+        uniq_pairs_new = {(r["uid"], r["roi"]) for r in records}
+        num_pairs_new = len(uniq_pairs_new)
+        missing_after_unseen = total_cys - num_pairs_new
+        print(
+            f"[sanity] after add_unseen: unique UID,ROI pairs = {num_pairs_new}, "
+            f"missing = {missing_after_unseen}"
+        )
+        print()
+
+
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Passthrough label map
+    # (always created so later code can reference it safely)
+    # ──────────────────────────────────────────────────────────────────────
+    passthrough_label_map = {uid: ["2"] * len(seq) for uid, seq in seq_map.items()}
+    
+    if passthrough_srcs:
+        for r in records:
+            if r["source"] not in passthrough_srcs:
+                continue
+            uid  = r["uid"]
+            idx  = (r.get("mapped_roi", r["roi"])) - 1   # 0-based position
+            if r["exp_bin"]:                              # any TRUE wins
+                passthrough_label_map[uid][idx] = "1"
+            else:
+                # only write 0 if that ROI isn’t already set to 1
+                if passthrough_label_map[uid][idx] != "1":
+                    passthrough_label_map[uid][idx] = "0"
+    # ──────────────────────────────────────────────────────────────────────
+
+    # ── 3) Filter by sequence length ───────────────────────────────────────
+    from collections import defaultdict
+    import statistics
+
+    seq_lens = {uid: len(seq) for uid, seq in seq_map.items()}
+    uids_below = {uid for uid, L in seq_lens.items() if L < args.minlen}
+    uids_above = {uid for uid, L in seq_lens.items() if L > args.maxlen}
+    uids_to_drop = uids_below | uids_above
+
+    records_below = [r for r in records if r["uid"] in uids_below]
+    records_above = [r for r in records if r["uid"] in uids_above]
+    total_dropped = len(records_below) + len(records_above)
+    pairs_below = {(r["uid"], r["roi"]) for r in records_below}
+    pairs_above = {(r["uid"], r["roi"]) for r in records_above}
+    total_pairs_dropped = len(pairs_below | pairs_above)
+
+    filtered = filter_by_length(records, args.minlen, args.maxlen)
+    rem_records = len(filtered)
+    rem_uids = {r["uid"] for r in filtered}
+    rem_pairs = {(r["uid"], r["roi"]) for r in filtered}
+
+    print(
+        f"Length filter (min={args.minlen}, max={args.maxlen}):\n"
+        f"  UIDs below min length (<{args.minlen}): {len(uids_below)}\n"
+        f"  UIDs above max length (>{args.maxlen}): {len(uids_above)}\n"
+        f"  Total UIDs dropped                    : {len(uids_to_drop)}\n"
+        f"  Total records dropped (all categories) : {total_dropped}\n"
+        f"  Total UID,ROI pairs dropped            : {total_pairs_dropped}\n\n"
+        f"  Remaining records after filter          : {rem_records}\n"
+        f"  Remaining unique UIDs                   : {len(rem_uids)}\n"
+        f"  Remaining unique UID,ROI pairs          : {len(rem_pairs)}\n",
+        flush=True,
+    )
+
+    # ── (sequence-length and ROI-count stats) ────────────────────────────
+    remaining_lengths = [seq_lens[uid] for uid in rem_uids]
+    if remaining_lengths:
+        min_len = min(remaining_lengths)
+        max_len = max(remaining_lengths)
+        avg_len = statistics.mean(remaining_lengths)
+        std_len = (
+            statistics.stdev(remaining_lengths)
+            if len(remaining_lengths) > 1 else 0.0
+        )
+        med_len = statistics.median(remaining_lengths)
+        print(
+            "@Sequence length stats on remaining UIDs:\n"
+            f"  Min length   : {min_len}\n"
+            f"  Max length   : {max_len}\n"
+            f"  Avg length   : {avg_len:.1f}\n"
+            f"  Std dev      : {std_len:.1f}\n"
+            f"  Median length: {med_len}\n",
+            flush=True,
+        )
+    rois_per_uid_orig = defaultdict(set)
+    for r in filtered:
+        rois_per_uid_orig[r["uid"]].add(r["roi"])
+    roi_counts = [len(s) for s in rois_per_uid_orig.values()]
+    if roi_counts:
+        min_roi = min(roi_counts)
+        max_roi = max(roi_counts)
+        avg_roi = statistics.mean(roi_counts)
+        med_roi = statistics.median(roi_counts)
+        print(
+            "@ROI‐counts per remaining UID:\n"
+            f"  Min ROI count   : {min_roi}\n"
+            f"  Max ROI count   : {max_roi}\n"
+            f"  Avg ROI count   : {avg_roi:.1f}\n"
+            f"  Median ROI count: {med_roi}\n",
+            flush=True,
+        )
+
+    records = filtered
+
+    # ── 3.a) Pre-clustering: drop proteins with too many positive ROIs ────
+    if args.max_pos_per_prot is not None:
+        from collections import defaultdict
+
+        # 1) collect all positive (uid,roi) pairs
+        pos_pairs = {
+            (r["uid"], r["roi"])
+            for r in records
+            if r["source"] not in passthrough_srcs      # ← ignore passthrough
+               and r.get("exp_bin", False)
+        }
+
+        # 2) count positives per UID
+        pos_counts = defaultdict(int)
+        for uid, roi in pos_pairs:
+            pos_counts[uid] += 1
+
+        # 3) identify UIDs to exclude
+        exclude_uids = {
+            uid for uid, count in pos_counts.items()
+            if count > args.max_pos_per_prot
+        }
+        if exclude_uids:
+            # before/after snapshots for reporting
+            total_before = len(records)
+            pairs_before = {(r["uid"], r["roi"]) for r in records}
+
+            # which records and pairs are being dropped
+            dropped_records = [r for r in records if r["uid"] in exclude_uids]
+            num_records_dropped = len(dropped_records)
+            dropped_pairs = {(r["uid"], r["roi"]) for r in dropped_records}
+            num_pairs_dropped = len(dropped_pairs)
+
+            # report
+            print(
+                f"Pre-clustering filter: excluding {len(exclude_uids)} proteins "
+                f"with >{args.max_pos_per_prot} positive ROIs",
+                flush=True
+            )
+            print(
+                f"  Dropping {num_records_dropped} records "
+                f"covering {num_pairs_dropped} unique UID,ROI pairs "
+                f"(out of {total_before} records, {len(pairs_before)} pairs)",
+                flush=True
+            )
+
+            # actually drop them
+            records = [r for r in records if r["uid"] not in exclude_uids]
+
+
+    # ── 4) Build needed mapping ────────────────────────────────────────────
+    headers = build_header_map(records)
+    needed = build_needed(records)
+
+    # ── CLUSTER‐CACHE logic ───────────────────────────────────────────────
+    # decide where our cluster cache should live
+    if args.cluster_cache:
+        cluster_cache_path = args.cluster_cache
+    else:
+        cluster_cache_path = os.path.join(args.report_dir, "cluster_cache.json")
+
+    skip_clustering = False
+    if os.path.isfile(cluster_cache_path):
+        print(f"Found existing cluster cache at: {cluster_cache_path}", flush=True)
+        choice = input(
+            "  [U]se cache, [O]verwrite cache, or [N] (new --cluster-cache)? "
+        ).strip().lower()
+        if choice == "u":
+            print("Loading groups from cache...", flush=True)
+            with open(cluster_cache_path) as cf:
+                groups = json.load(cf)
+            print(f"Loaded {len(groups)} groups.\n", flush=True)
+            # rebuild uid_to_cluster so pruning, reporting, resolve, etc. still work
+            from collections import defaultdict
+            uid_to_cluster = defaultdict(set)
+            for g in groups:
+                gid = g["group_id"]
+                for m in g["members"]:
+                    uid_to_cluster[m["uid"]].add(gid)
+            skip_clustering = True
+        elif choice == "o":
+            print("Overwriting cluster cache with fresh clusters...\n", flush=True)
+            groups = None
+        else:
+            print("Please re-run with a different --cluster-cache path. Exiting.", flush=True)
+            sys.exit(0)
+    else:
+        groups = None
+    # ── end cluster‑cache logic ───────────────────────────────────────────
+
+    if not skip_clustering:
+        # ── 5) Load embeddings ─────────────────────────────────────────────────
+        print(f"Loading embeddings from: {args.emb}", flush=True)
+        from aipp.distill import load_embeddings
+        embs = load_embeddings(
+            args.emb,
+            sorted(int(x) for x in args.repr.split(",") if x.strip()),
+            needed,
+            max_workers=args.threads,
+        )
+
+
+        # ── 6) Identify missing embeddings ────────────────────────────────────
+        missing, uniq_cys, uniq_uids = find_missing(records, embs)
+        if missing:
+            print(
+                f"\nERROR: Embeddings missing for {len(uniq_cys)} "
+                f"unique cysteine-record(s).",
+                flush=True,
+            )
+            print(f"       Missing proteins: {len(uniq_uids)}", flush=True)
+            print("\nOptions:", flush=True)
+            print("  [D]rop missing records and continue grouping", flush=True)
+            print("  [W]rite missing.fasta & exit", flush=True)
+            choice = input("Enter D or W: ").strip().lower()
+            if choice == "w":
+                fasta_path = os.path.join(args.report_dir, "uid_sequences.fasta")
+                write_missing_fasta(uniq_uids, fasta_path, args.report_dir)
+                print("Exiting.", flush=True)
+                sys.exit(0)
+            elif choice == "d":
+                keep = [r for r in records if r not in missing]
+                print(
+                    f"Dropped {len(records) - len(keep)} record(s). Continuing.",
+                    flush=True,
+                )
+                records = keep
+            else:
+                print("Unrecognized choice. Exiting.", flush=True)
+                sys.exit(1)
+        else:
+            print("All embeddings found; proceeding to clustering.\n", flush=True)
+
+        # Write the exact pre-cluster pool we will pass into clustering.
+        pre_path = os.path.join(args.report_dir, "precluster_records.txt")
+        write_precluster_records(pre_path, records)
+        print(f"Wrote pre-cluster records: {pre_path}", flush=True)
+
+        # ── 7) Build deduplicated nodes ───────────────────────────────────────
+
+        import aipp.grouping as _grp
+        # if identitythr>100, subsequence windows are never used
+        _grp._SKIP_SEQ_WINDOWS = (args.identitythr > 100.0)
+
+        nodes = build_nodes(records, embs)
+        print(
+            f"Built {len(nodes)} nodes (1 per unique UID,ROI pair) for clustering…",
+            flush=True,
+        )
+
+        # ── 8) GPU clustering ─────────────────────────────────────────────────
+        groups = cluster_nodes(
+            nodes,
+            args.window,
+            args.identitythr,
+            args.compthr,
+            block_size=512,
+        )
+
+        # ── 8.a) Prune any member whose composite score < compthr ────────────
+        for g in groups:
+            g["members"] = [
+                m for m in g["members"]
+                if m.get("comp", 0.0) >= args.compthr
+            ]
+
+        # ── 8.b) Iterative rescue: re-cluster pruned nodes until convergence ─
+        # Build initial set of pruned nodes
+        clustered = {(m["uid"], m["roi"]) for g in groups for m in g["members"]}
+        to_rescue = [n for n in nodes if (n.uid, n.pos) not in clustered]
+        next_gid = max((g["group_id"] for g in groups), default=-1)
+
+        iteration = 0
+        while to_rescue:
+            iteration += 1
+            print(f"Rescue iteration {iteration}: reclustering {len(to_rescue)} nodes…", flush=True)
+            rescue_clusters = cluster_nodes(
+                to_rescue,
+                args.window,
+                args.identitythr,
+                args.compthr,
+                block_size=512,
+            )
+
+            # From each rescue cluster, keep only members meeting compthr
+            survivors = set()
+            kept_clusters = []
+            for rc in rescue_clusters:
+                kept = [m for m in rc["members"] if m.get("comp", 0.0) >= args.compthr]
+                if not kept:
+                    continue
+                rc["members"] = kept
+                # track which (uid,roi) survived
+                for m in kept:
+                    survivors.add((m["uid"], m["roi"]))
+                kept_clusters.append(rc)
+
+            # Assign new GIDs and append all kept rescue clusters
+            if kept_clusters:
+                for rc in kept_clusters:
+                    next_gid += 1
+                    rc["group_id"] = next_gid
+                    groups.append(rc)
+
+            # Compute fresh list of nodes still un-rescued
+            new_to_rescue = [n for n in to_rescue if (n.uid, n.pos) not in survivors]
+            # If nobody survived this round, or no change, break
+            if len(new_to_rescue) == len(to_rescue):
+                break
+            to_rescue = new_to_rescue
+
+        # ── 8.c) Any nodes still in to_rescue never made a valid cluster → singletons
+        if to_rescue:
+            print(f"Final rescue: creating {len(to_rescue)} singleton clusters…", flush=True)
+            for node in to_rescue:
+                next_gid += 1
+                items = []
+                for rec in node.rec_list:
+                    items.append({
+                        "uid":       rec["uid"],
+                        "roi":       rec["mapped_roi"],
+                        "identity":  100.0,
+                        "comp":      1.0,
+                        "label":     "TRUE" if rec["exp_bin"] else "FALSE",
+                        "source":    rec["source"],
+                        "note":      rec.get("note", ""),
+                        "R":         rec["R"],
+                    })
+                groups.append({
+                    "group_id":       next_gid,
+                    "representative": {"uid": node.uid, "roi": node.pos},
+                    "members":        items,
+                })
+
+        # ── DEBUG DUMP: what's actually in your final `groups` ─────────────────
+        from collections import Counter
+        
+        # 1) build the set of all (uid,pos) that survived into groups
+        survived = {(m["uid"], m["roi"]) for g in groups for m in g["members"]}
+        
+        # 2) build the set of all (uid,pos) you *started* with
+        all_nodes = {(node.uid, node.pos) for node in nodes}
+        
+        # 3) find which ones never survived
+        missing = all_nodes - survived
+        
+        print(f"DEBUG: total starting nodes: {len(all_nodes)}", flush=True)
+        print(f"DEBUG: total survived in clusters: {len(survived)}", flush=True)
+        print(f"DEBUG: total missing: {len(missing)} → {sorted(missing)[:10]}", flush=True)
+        if ("3UR9-A", 146) in missing:
+            print("DEBUG: 3UR9-A @146 truly never made it into *any* cluster.", flush=True)
+
+
+        # ── 8.c) Now write the full grouping report ─────────────────────────
+        cys_report = os.path.join(args.report_dir, "cys_groups_report.txt")
+        # ── Make grouping report deterministic ────────────────────────────
+
+        # 1) sort clusters by group_id
+        sorted_groups = sorted(groups, key=lambda g: g["group_id"])
+ 
+        # 2) for each cluster, sort its members by uid, roi, source, note
+        for g in sorted_groups:
+            g["members"] = sorted(
+                g["members"],
+                key=lambda m: (
+                    m["uid"],
+                    m["roi"],
+                    m.get("source", ""),
+                    m.get("note", "")
+                )
+            )
+ 
+        write_cys_groups_report(sorted_groups, cys_report)
+        print(f"Cys grouping report written: {cys_report}", flush=True)
+
+        uid_to_cluster = defaultdict(set)
+        for g in groups:
+            gid = g["group_id"]
+            for m in g["members"]:
+                uid_to_cluster[m["uid"]].add(gid)
+        # ── write out the cluster cache for next time
+        try:
+            with open(cluster_cache_path, "w") as cf:
+                json.dump(groups, cf)
+            print(f"Cluster cache written to: {cluster_cache_path}\n", flush=True)
+        except Exception as e:
+            print(f"Warning: could not write cluster cache {cluster_cache_path}: {e}\n", flush=True)
+    else:
+        print("Skipping embeddings + clustering; using cached groups.\n", flush=True)
+
+        # Even with cached groups, emit the current pre-cluster records.
+        pre_path = os.path.join(args.report_dir, "precluster_records.txt")
+        write_precluster_records(pre_path, records)
+        print(f"Wrote pre-cluster records: {pre_path}", flush=True)
+
+
+    # ── (clustering-summary stats) ────────────────────────────────────────
+    import statistics
+    total_groups = len(groups)
+    group_sizes = [len(g["members"]) for g in groups]
+    single_member = sum(1 for size in group_sizes if size == 1)
+    if group_sizes:
+        min_size = min(group_sizes)
+        max_size = max(group_sizes)
+        avg_size = statistics.mean(group_sizes)
+        med_size = statistics.median(group_sizes)
+    else:
+        min_size = max_size = avg_size = med_size = 0
+
+    print()
+    print("@Clustering summary:")
+    print(f"  Total groups formed        : {total_groups}")
+    print(f"  Single‐member groups       : {single_member}")
+    print(
+        f"  Group‐size → min: {min_size}, max: {max_size}, "
+        f"avg: {avg_size:.1f}, median: {med_size}"
+    )
+    print()
+    total_members = sum(group_sizes)
+    pre_cluster_records = len(records)
+    print(f"@Sanity check:")
+    print(f"  Total members in clusters  : {total_members}")
+    print(f"  Records before clustering  : {pre_cluster_records}")
+    if total_members == pre_cluster_records:
+        print("  ✔ Counts match exactly.")
+    else:
+        print("  ⚠ MISMATCH! These differ.")
+    print()
+    all_member_uids = set()
+    all_member_pairs = set()
+    for g in groups:
+        for m in g["members"]:
+            all_member_uids.add(m["uid"])
+            all_member_pairs.add((m["uid"], m["roi"]))
+    print("@Across all group members:")
+    print(f"  Unique UIDs   : {len(all_member_uids)}")
+    print(f"  Unique UID,ROI pairs: {len(all_member_pairs)}")
+    print()
+    rep_uids_all = {g["representative"]["uid"] for g in groups}
+    rep_pairs_all = {
+        (g["representative"]["uid"], g["representative"]["roi"])
+        for g in groups
+    }
+    print("@Group representatives (all groups):")
+    print(f"  Count of representatives      : {len(groups)}")
+    print(f"  Unique UIDs among reprs       : {len(rep_uids_all)}")
+    print(f"  Unique UID,ROI pairs among reprs: {len(rep_pairs_all)}")
+    print()
+    if args.prioritize:
+        prioritize_set = {
+            s.strip() for s in args.prioritize.split(",") if s.strip()
+        }
+    else:
+        prioritize_set = set()
+    multi_groups = []
+    for g in groups:
+        size = len(g["members"])
+        if size > 1:
+            multi_groups.append(g)
+        elif size == 1 and prioritize_set:
+            src = g["members"][0]["source"]
+            if src in prioritize_set:
+                multi_groups.append(g)
+    mg_count = len(multi_groups)
+    print(
+        "@Group representatives (multi‐member groups + "
+        "prioritized singletons):"
+    )
+    print(f"  Count of such groups          : {mg_count}")
+    rep_uids_multi = {g["representative"]["uid"] for g in multi_groups}
+    rep_pairs_multi = {
+        (g["representative"]["uid"], g["representative"]["roi"])
+        for g in multi_groups
+    }
+    print(
+        f"  Unique UIDs among these reprs : {len(rep_uids_multi)}"
+    )
+    print(
+        f"  Unique UID,ROI pairs among these reprs: "
+        f"{len(rep_pairs_multi)}"
+    )
+    print()
+
+    # ── 9) If no consensus rule, stop here ───────────────────────────────
+    if not args.cb:
+        return
+
+    # ── 10) Parse consensus rule(s), gather prioritize + novote sources ─
+    cb_rule_pos = parse_cb_rule(args.cb)
+    if args.negcb:
+        cb_rule_neg = parse_cb_rule(args.negcb)
+    else:
+        cb_rule_neg = cb_rule_pos
+
+    if args.fcpscb:
+        fcps_cb_rule_pos = parse_cb_rule(args.fcpscb)
+        fcps_cb_rule_neg = (
+            parse_cb_rule(args.fcpsnegcb)
+            if args.fcpsnegcb else fcps_cb_rule_pos
+        )
+    else:
+        fcps_cb_rule_pos, fcps_cb_rule_neg = cb_rule_pos, cb_rule_neg
+
+    if args.prioritize:
+        prioritize = {s.strip() for s in args.prioritize.split(",") if s.strip()}
+    else:
+        prioritize = set()
+
+    if args.novote:
+        novote_sources = {s.strip() for s in args.novote.split(",") if s.strip()}
+    else:
+        novote_sources = set()
+
+    # ── 11) Resolve groups with global CB rules ───────────────────────────
+    resolved = resolve_groups(
+        groups,
+        cb_rule_pos=cb_rule_pos,
+        cb_rule_neg=cb_rule_neg,
+        prioritize_sources=prioritize,
+        novote_sources=novote_sources,
+        min_src_per_pos=args.min_src_per_pos,
+        min_src_per_neg=args.min_src_per_neg
+    )
+    for g in resolved:
+        grp_lbl = g["label"]
+        if grp_lbl is True:
+            lbl_enc = 1
+        elif grp_lbl is False:
+            lbl_enc = 0
+        else:
+            lbl_enc = 2
+        for m in g["members"]:
+            m["group_label"] = lbl_enc
+
+    # ── 12) Build in-memory label_map ────────────────────────────────────
+    label_map = {uid: ["2"] * len(seq_map[uid]) for uid in seq_map}
+    for g in resolved:
+        for m in g["members"]:
+            uid = m["uid"]
+            mapped = m["mapped_roi"] if "mapped_roi" in m else m["roi"]
+            if 1 <= mapped <= len(label_map[uid]):
+                label_map[uid][mapped - 1] = str(m["group_label"])
+
+    # ── 13) Resolve groups with FCPS CB rules ───────────────────────────
+    resolved_fcps = resolve_groups(
+        groups,
+        cb_rule_pos=fcps_cb_rule_pos,
+        cb_rule_neg=fcps_cb_rule_neg,
+        prioritize_sources=prioritize,
+        novote_sources=novote_sources
+    )
+    fcps_label_map = {uid: ["2"] * len(seq_map[uid]) for uid in seq_map}
+    for g in resolved_fcps:
+        enc = "1" if g["label"] is True else "0" if g["label"] is False else "2"
+        for m in g["members"]:
+            uid = m["uid"]
+            mapped = (m["mapped_roi"] if "mapped_roi" in m else m["roi"]) - 1
+            if 0 <= mapped < len(fcps_label_map[uid]):
+                fcps_label_map[uid][mapped] = enc
+
+    # ── Prepare for subsets & pruning ────────────────────────────────────
+    rois_per_uid = defaultdict(set)
+    for r in records:
+        rois_per_uid[r["uid"]].add(r.get("mapped_roi", r["roi"]))
+
+    def roi_stats(uids_set, lb_map=None):
+        if lb_map is None:
+            lb_map = label_map
+        unique_pairs = pos = neg = mask = 0
+        for uid in uids_set:
+            for roi in rois_per_uid.get(uid, ()):
+                unique_pairs += 1
+                lbl = lb_map[uid][roi - 1]
+                if lbl == "1":
+                    pos += 1
+                elif lbl == "0":
+                    neg += 1
+                else:
+                    mask += 1
+        pct_pos = (100.0 * pos / (pos + neg)) if (pos + neg) > 0 else 0.0
+        return unique_pairs, pos, neg, mask, pct_pos
+
+    if args.unmaskroi:
+        unmaskroi_set = {
+            aa.strip().upper()
+            for aa in args.unmaskroi.split(",")
+            if aa.strip()
+        }
+    else:
+        unmaskroi_set = set()
+
+    all_uids = {r["uid"] for r in records}
+
+    # ── Precompute Filter-For UIDs so FCPS skips them ────────────────────
+    filterfor_uids = {
+        r["uid"]
+        for r in records
+        if r["source"] in filterfor_list
+    }
+
+    prune_clusters = set()
+    fcps_uids = set()
+
+    # Track clusters that are pruned *specifically* because of Filter-For
+    # (i.e., not because of FCPS). Used by --isolatefilteredonly.
+    prune_clusters_filterfor = set()
+
+    # When --isolatefilteredonly, we first collect FCPS candidates and emit later
+    fcps_pending = set()
+
+    # ── Stage 1: ISOLATE FCPS subset ──────────────────────────────────
+    if args.isolatefcps and not args.isolatefilteredonly:
+        prefix = os.path.join(args.report_dir, "fcps")
+        rois_grouped = defaultdict(set)
+        for g in resolved_fcps:
+            for m in g["members"]:
+                uid = m["uid"]
+                # skip any proteins already in Filter-For
+                if uid in filterfor_uids:
+                    continue
+                mpos = m.get("mapped_roi", m["roi"])
+                rois_grouped[uid].add(mpos)
+
+        fcps_candidate = {
+            uid for uid, ors in rois_grouped.items()
+            if seq_map.get(uid)
+               and not any(fcps_label_map[uid][r-1] == "2" for r in ors)
+        }
+
+        for uid in fcps_candidate:
+            pos_ct = sum(1 for r in rois_grouped[uid] if fcps_label_map[uid][r-1] == "1")
+            neg_ct = sum(1 for r in rois_grouped[uid] if fcps_label_map[uid][r-1] == "0")
+            if (args.fcpsnoposrequired or pos_ct >= 1) and (args.fcpsnonegrequired or neg_ct >= 1):
+                fcps_uids.add(uid)
+
+        # In the default mode, FCPS also triggers pruning
+        for uid in fcps_uids:
+            prune_clusters |= uid_to_cluster.get(uid, set())
+        print(f"  marked clusters of {len(fcps_uids)} FCPS proteins", flush=True)
+
+        write_fasta_labels(prefix, fcps_uids, headers, seq_map, fcps_label_map)
+        print(f"FCPS FASTA+LABEL written: {prefix}.fasta , {prefix}.label", flush=True)
+        s2_pairs, s2_pos, s2_neg, s2_mask, s2_pct = roi_stats(fcps_uids, lb_map=fcps_label_map)
+        print("@FCPS subset:")
+        print(f"  Unique UIDs           : {len(fcps_uids)}")
+        print(f"  Unique UID,ROI pairs  : {s2_pairs}")
+        print(f"    # positive (label=1): {s2_pos}")
+        print(f"    # negative (label=0): {s2_neg}")
+        print(f"    # masked   (label=2): {s2_mask}")
+        print(f"    % pos (1/(1+0))     : {s2_pct:.1f}%\n")
+
+    elif args.isolatefcps and args.isolatefilteredonly:
+        # Defer FCPS emission until after Filter-For pruning is determined.
+        rois_grouped = defaultdict(set)
+        for g in resolved_fcps:
+            for m in g["members"]:
+                uid = m["uid"]
+                #if uid in filterfor_uids:
+                #    continue
+                mpos = m.get("mapped_roi", m["roi"])
+                rois_grouped[uid].add(mpos)
+        # candidates that are fully labeled under FCPS rules and meet pos/neg reqs
+        for uid, ors in rois_grouped.items():
+            if seq_map.get(uid) and not any(fcps_label_map[uid][r-1] == "2" for r in ors):
+                pos_ct = sum(1 for r in ors if fcps_label_map[uid][r-1] == "1")
+                neg_ct = sum(1 for r in ors if fcps_label_map[uid][r-1] == "0")
+                if (args.fcpsnoposrequired or pos_ct >= 1) and (args.fcpsnonegrequired or neg_ct >= 1):
+                    fcps_pending.add(uid)
+        # IMPORTANT: do NOT mark prune_clusters here; wait for Filter-For.
+        print(f"@FCPS (deferred via --isolatefilteredonly): pending {len(fcps_pending)} candidates", flush=True)
+
+
+    # ── Stage 2: FILTERFOR subset (one file per source) ────────────────────
+    for src in filterfor_list:
+        # 1) collect all proteins that originated from this source
+        all_src_uids = {r["uid"] for r in records if r["source"] == src}
+        print(f"@Filterfor subset: {src} "
+              f"(total proteins in source: {len(all_src_uids)})",
+              flush=True)
+    
+        # 2) decide which label map to use
+        passthrough_mode  = src in passthrough_srcs
+        active_label_map  = (
+            passthrough_label_map if passthrough_mode else label_map
+        )
+
+        # Apply pos/neg gating for:
+        #  - all non-passthrough sources, OR
+        #  - passthrough sources when explicitly requested
+        apply_posneg_checks = (not passthrough_mode) or args.passthrough_require_posneg
+
+        # 3) start with every UID from this source
+        uids = set(all_src_uids)
+    
+        # ————————————————————————————————————————————————————————————
+        # NEW: ROI-level unmasking (only for consensus-driven sources)
+        #      Passthrough sources are *already* fully decided (0/1),
+        #      so we leave their maps untouched.
+        if not passthrough_mode and unmaskroi_set:
+            total_converted = 0
+            prots_affected  = 0
+            for uid in uids:
+                seq = seq_map[uid]
+                converted_this = 0
+                for pos in rois_per_uid.get(uid, ()):
+                    if (active_label_map[uid][pos-1] == "2"
+                            and seq[pos-1].upper() in unmaskroi_set):
+                        active_label_map[uid][pos-1] = "0"
+                        converted_this += 1
+                if converted_this:
+                    prots_affected  += 1
+                    total_converted += converted_this
+            if total_converted:
+                print("@Unmask ROI: converted "
+                      f"{total_converted} masked ROI labels to negatives in "
+                      f"{prots_affected} proteins "
+                      f"(residues: {','.join(sorted(unmaskroi_set))})",
+                      flush=True)
+    
+        # ————————————————————————————————————————————————————————————
+        # NEW: --unmaskfiltered (again skip passthrough sources)
+        if not passthrough_mode and args.unmaskfiltered:
+            total_masked     = 0
+            prots_with_mask  = 0
+            for uid in uids:
+                mask_cnt = active_label_map[uid].count("2")
+                if mask_cnt:
+                    prots_with_mask += 1
+                    total_masked    += mask_cnt
+                    active_label_map[uid] = [
+                        "0" if x == "2" else x for x in active_label_map[uid]
+                    ]
+            if total_masked:
+                print("@Unmask Filtered: converted "
+                      f"{total_masked} masked cysteines to negatives in "
+                      f"{prots_with_mask} proteins.",
+                      flush=True)
+    
+        # 4) Apply pos/neg requirements
+        if apply_posneg_checks:
+            if not args.filternoposrequired:
+                before = len(uids)
+                uids   = {uid for uid in uids if "1" in active_label_map[uid]}
+                print(f"  — after requiring ≥1 positive: kept {len(uids)}, "
+                      f"dropped {before - len(uids)}",
+                      flush=True)
+
+            if not args.filternonegrequired:
+                before = len(uids)
+                uids   = {uid for uid in uids if "0" in active_label_map[uid]}
+                print(f"  — after requiring ≥1 negative: kept {len(uids)}, "
+                      f"dropped {before - len(uids)}",
+                      flush=True)
+        else:
+            # passthrough (no --passthrough_require_posneg): skip pos/neg gating
+            print("  --passthrough source: skipping pos/neg requirements (no --passthrough_require_posneg)", flush=True)
+    
+        # 5) Mark clusters for pruning
+        if args.prune_all_filtered:
+            # prune *every* cluster containing any protein from this source
+            for uid in all_src_uids:
+                gids = uid_to_cluster.get(uid, set())
+                prune_clusters |= gids
+                prune_clusters_filterfor |= gids
+            print("  --prune_all_filtered: marked clusters of all "
+                  f"{len(all_src_uids)} source proteins",
+                  flush=True)
+        else:
+            # only prune clusters of the proteins that passed pos/neg
+            for uid in uids:
+                gids = uid_to_cluster.get(uid, set())
+                prune_clusters |= gids
+                prune_clusters_filterfor |= gids
+            print(f"  marked clusters of {len(uids)} filtered proteins",
+                  flush=True)
+    
+        # 6) Write FASTA + LABEL under “<src>.fasta / .label”
+        prefix = os.path.join(args.report_dir, src.lower())
+        write_fasta_labels(prefix, uids, headers, seq_map, active_label_map)
+    
+        # 7) Report stats for this subset
+        s_pairs, s_pos, s_neg, s_mask, s_pct = roi_stats(uids,
+                                                         lb_map=active_label_map)
+        print(f"@Filterfor subset: {src}")
+        print(f"  Unique UIDs           : {len(uids)}")
+        print(f"  Unique UID,ROI pairs  : {s_pairs}")
+        print(f"    # positive (label=1): {s_pos}")
+        print(f"    # negative (label=0): {s_neg}")
+        print(f"    # masked   (label=2): {s_mask}")
+        print(f"    % pos (1/(1+0))     : {s_pct:.1f}%\n")
+###
+    # --- HYPOTHETICAL FCPS (works even when --isolatefcps is OFF) ---
+    from collections import defaultdict
+    
+    # Build per-UID ROI set from the already-computed resolved_fcps / fcps_label_map
+    rois_grouped = defaultdict(set)
+    for g in resolved_fcps:
+        for m in g["members"]:
+            uid = m["uid"]
+            mpos = m.get("mapped_roi", m["roi"])
+            rois_grouped[uid].add(mpos)
+    
+    # Mirror your FCPS-eligibility logic (skip UIDs that are in Filter-For sources;
+    # toggle this 'if' off if you want to include them)
+    fcps_hypo = set()
+    for uid, ors in rois_grouped.items():
+        if uid in filterfor_uids:
+            continue
+        if seq_map.get(uid) and not any(fcps_label_map[uid][r-1] == "2" for r in ors):
+            pos_ct = sum(1 for r in ors if fcps_label_map[uid][r-1] == "1")
+            neg_ct = sum(1 for r in ors if fcps_label_map[uid][r-1] == "0")
+            if (args.fcpsnoposrequired or pos_ct >= 1) and (args.fcpsnonegrequired or neg_ct >= 1):
+                fcps_hypo.add(uid)
+    
+    print(f"[DBG] Hypothetical FCPS UIDs (no flag): {len(fcps_hypo)}")
+    
+    # Which clusters *would* FCPS add to pruning beyond Filter-For?
+    fcps_hypo_gids = set().union(*(uid_to_cluster.get(uid, set()) for uid in fcps_hypo))
+    fcps_only_pruned_gids = fcps_hypo_gids - prune_clusters_filterfor
+    print(f"[DBG] FCPS-only pruned clusters (hypothetical): {len(fcps_only_pruned_gids)}")
+    
+    uids_in_fcps_only_pruned = set()
+    for g in groups:
+        if g["group_id"] in fcps_only_pruned_gids:
+            for m in g["members"]:
+                uids_in_fcps_only_pruned.add(m["uid"])
+    print(f"[DBG] UIDs in FCPS-only pruned clusters: {len(uids_in_fcps_only_pruned)}")
+
+    # --- BEGIN DIAG ---
+    print(f"[DBG] #GIDs pruned by Filter-For: {len(prune_clusters_filterfor)}")
+    
+    # Sanity check a few FCPS pending UIDs
+    fcps_pending_list = sorted(list(fcps_pending))[:10]
+    print(f"[DBG] Sample FCPS pending UIDs (showing up to 10): {fcps_pending_list}")
+    
+    # Verify uid_to_cluster mapping exists and looks sane
+    missing_map = [uid for uid in fcps_pending if uid not in uid_to_cluster]
+    print(f"[DBG] FCPS UIDs missing in uid_to_cluster: {len(missing_map)}")
+    
+    # Compute eligibility *by UID* (any cluster overlap counts)
+    eligible = set()
+    for uid in fcps_pending:
+        gids = uid_to_cluster.get(uid, set())
+        if not isinstance(gids, set):
+            gids = set(gids)
+        if gids & prune_clusters_filterfor:
+            eligible.add(uid)
+    
+    print(f"[DBG] Eligible FCPS UIDs (intersection by UID): {len(eligible)}")
+    
+    # Show a few matches and why
+    sample_hits = sorted(list(eligible))[:5]
+    for uid in sample_hits:
+        gids = uid_to_cluster.get(uid, set())
+        hit = list(gids & prune_clusters_filterfor)[:5]
+        print(f"[DBG]  UID {uid} intersects pruned GIDs: {hit}")
+    
+    # Extra: how many FCPS UIDs are from Filter-For sources themselves?
+    from_src = len([uid for uid in fcps_pending if uid in filterfor_uids])
+    print(f"[DBG] FCPS pending from Filter-For sources: {from_src} / {len(fcps_pending)}")
+    # --- END DIAG ---
+    
+    # Use the computed 'eligible' set directly:
+    fcps_uids = eligible
+
+#######
+
+    # ── Emit FCPS now if --isolatefilteredonly was set ───────────────
+    if args.isolatefcps and args.isolatefilteredonly:
+        print(f"FCPS pending: {len(fcps_pending)}")
+        print(f"Filter-For-pruned GIDs: {len(prune_clusters_filterfor)}")
+        print(f"Eligible (intersection): {len(fcps_uids)}")
+
+        # Keep only FCPS pending UIDs whose cluster(s) are going to be pruned
+        # due to Filter-For (NOT because of FCPS itself).
+        eligible = set()
+        for uid in fcps_pending:
+            if uid_to_cluster.get(uid, set()) & prune_clusters_filterfor:
+                eligible.add(uid)
+        fcps_uids = eligible
+
+        prefix = os.path.join(args.report_dir, "fcps")
+        write_fasta_labels(prefix, fcps_uids, headers, seq_map, fcps_label_map)
+        print(f"FCPS FASTA+LABEL written: {prefix}.fasta , {prefix}.label", flush=True)
+
+        s2_pairs, s2_pos, s2_neg, s2_mask, s2_pct = roi_stats(fcps_uids, lb_map=fcps_label_map)
+        print("@FCPS subset (filtered to clusters pruned by Filter-For):")
+        print(f"  Unique UIDs           : {len(fcps_uids)}")
+        print(f"  Unique UID,ROI pairs  : {s2_pairs}")
+        print(f"    # positive (label=1): {s2_pos}")
+        print(f"    # negative (label=0): {s2_neg}")
+        print(f"    # masked   (label=2): {s2_mask}")
+        print(f"    % pos (1/(1+0))     : {s2_pct:.1f}%\n")
+        # Note: do NOT add FCPS clusters to prune_clusters in this mode.
+
+    # ── Stage 3: Build remaining UIDs after pruning marked clusters ──────
+    if args.noautoprune:
+        rem_after = all_uids - fcps_uids - filterfor_uids
+    else:
+        prune_uids = set()
+        for g in groups:
+            if g["group_id"] in prune_clusters:
+                for m in g["members"]:
+                    prune_uids.add(m["uid"])
+        rem_after = all_uids - prune_uids
+
+    pool_pairs, pool_pos, pool_neg, pool_mask, pool_pct = roi_stats(rem_after)
+    print("@Pre‐distill pool (after removing filterfor & FCPS clusters):")
+    print(f"  Unique UIDs           : {len(rem_after)}")
+    print(f"  Unique UID,ROI pairs  : {pool_pairs}")
+    print(f"    # positive (label=1): {pool_pos}")
+    print(f"    # negative (label=0): {pool_neg}")
+    print(f"    # masked   (label=2): {pool_mask}")
+    print(f"    % pos (1/(1+0))     : {pool_pct:.1f}%")
+    print()
+
+
+
+
+    # ── Stage 4: Final distilled subset ─────────────────────────────────
+    if args.repsonly:
+        # only keep those representatives that actually have a consensus label (i.e. not MASKED)
+        final_uids = {
+            g["uid"]
+            for g in resolved
+            if g["uid"] in rem_after and g["label"] != "MASK"
+        }
+    else:
+        final_uids = set(rem_after)
+
+    if not args.noposrequired:
+        final_uids = {uid for uid in final_uids if "1" in label_map[uid]}
+    if not args.nonegrequired:
+        final_uids = {uid for uid in final_uids if "0" in label_map[uid]}
+
+    final_uids = {
+        uid for uid in final_uids
+        if any(ch in ("0","1") for ch in label_map[uid])
+    }
+
+    if final_uids:
+        # — if requested, mask all non-rep ROIs and show before/after stats
+        if args.masknonreps:
+            # stats before masking
+            b_pairs, b_pos, b_neg, b_mask, b_pct = roi_stats(final_uids)
+            # build a map uid→{rep_roi,…} from the *pre-consensus* clusters
+            from collections import defaultdict
+            rep_map = defaultdict(set)
+            for g in groups:
+                rep = g["representative"]
+                rep_map[rep["uid"]].add(rep["roi"])
+            # mask non-representative ROIs
+            for uid in final_uids:
+                for roi in rois_per_uid.get(uid, ()):
+                    if roi not in rep_map.get(uid, ()):
+                        label_map[uid][roi-1] = "2"
+            # stats after masking
+            a_pairs, a_pos, a_neg, a_mask, a_pct = roi_stats(final_uids)
+            print("@Mask non-representative ROIs:")
+            print("  Before masking:")
+            print(f"    UID,ROI pairs: {b_pairs}, +: {b_pos}, -: {b_neg}, masked: {b_mask}, %pos: {b_pct:.1f}%")
+            print("  After masking:")
+            print(f"    UID,ROI pairs: {a_pairs}, +: {a_pos}, -: {a_neg}, masked: {a_mask}, %pos: {a_pct:.1f}%\n")
+
+        # now the usual final stats & write-out
+        f_pairs, f_pos, f_neg, f_mask, f_pct = roi_stats(final_uids)
+        print("@Final distilled subset (after repsonly & pos/neg filters):")
+        print(f"  Unique UIDs           : {len(final_uids)}")
+        print(f"  Unique UID,ROI pairs  : {f_pairs}")
+        print(f"    # positive (label=1): {f_pos}")
+        print(f"    # negative (label=0): {f_neg}")
+        print(f"    # masked   (label=2): {f_mask}")
+        print(f"    % pos (1/(1+0))     : {f_pct:.1f}%\n")
+
+        # After building final_uids in Stage 4 but before writing output
+        from collections import defaultdict
+        
+        # All UIDs in clusters that *would* be pruned by FCPS if it were on:
+        fcps_gids = set().union(*(uid_to_cluster[uid] for uid in fcps_uids))
+        uids_in_fcps_clusters = set()
+        for g in groups:
+            if g["group_id"] in fcps_gids:
+                for m in g["members"]:
+                    uids_in_fcps_clusters.add(m["uid"])
+        
+        # Which of these would survive repsonly/masknonreps?
+        survivors = final_uids & uids_in_fcps_clusters
+        print(f"[DBG] UIDs in FCPS clusters: {len(uids_in_fcps_clusters)}")
+        print(f"[DBG] Of these, survive to final_uids: {len(survivors)}")
+
+        lost_if_enable_fcps = final_uids & uids_in_fcps_only_pruned
+        print(f"[DBG] Final UIDs that would be lost if FCPS were enabled: {len(lost_if_enable_fcps)}")
+
+        prefix = os.path.join(args.report_dir, "distilled")
+        write_fasta_labels(prefix, final_uids, headers, seq_map, label_map)
+        print(f"Distilled FASTA+LABEL written: {prefix}.fasta , {prefix}.label", flush=True)
+
+if __name__ == "__main__":
+    main()
+
