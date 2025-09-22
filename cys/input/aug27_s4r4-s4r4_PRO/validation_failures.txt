@@ -1,0 +1,505 @@
+P0DN79	Empty FASTA for P0DN79
+P0DN76	Empty FASTA for P0DN76
+H0Y2S0	Empty FASTA for H0Y2S0
+A6NE09	Empty FASTA for A6NE09
+F8VZW7	Empty FASTA for F8VZW7
+Q8V1	HTTP 400 for Q8V1
+B0V043	Empty FASTA for B0V043
+Q8F0	HTTP 400 for Q8F0
+P30042	Empty FASTA for P30042
+H7C3L3	Sequence contains non‐canonical residue 'X' for H7C3L3
+I3L3Q1	Empty FASTA for I3L3Q1
+P08107	Empty FASTA for P08107
+H0Y4E7	Sequence contains non‐canonical residue 'X' for H0Y4E7
+A0A1W2PQD4	Sequence contains non‐canonical residue 'X' for A0A1W2PQD4
+I3L420	Empty FASTA for I3L420
+Q6ZMK1	Empty FASTA for Q6ZMK1
+Q5JZ73	Empty FASTA for Q5JZ73
+A8MVX7	Empty FASTA for A8MVX7
+A0A494C117	Sequence contains non‐canonical residue 'X' for A0A494C117
+A0A1W2PQL0	Sequence contains non‐canonical residue 'X' for A0A1W2PQL0
+H0YL03	Sequence contains non‐canonical residue 'X' for H0YL03
+H7C5P4	Sequence contains non‐canonical residue 'X' for H7C5P4
+H0Y612	Sequence contains non‐canonical residue 'X' for H0Y612
+A0A0A0MTN3	Empty FASTA for A0A0A0MTN3
+H0Y7I9	Sequence contains non‐canonical residue 'X' for H0Y7I9
+H0Y8F2	Sequence contains non‐canonical residue 'X' for H0Y8F2
+V9GY48	Sequence contains non‐canonical residue 'X' for V9GY48
+A0A494C157	Sequence contains non‐canonical residue 'X' for A0A494C157
+A0A0A0MSL3	Empty FASTA for A0A0A0MSL3
+J3QQ67	Sequence contains non‐canonical residue 'X' for J3QQ67
+A0A087X211	Empty FASTA for A0A087X211
+H0Y8J8	Sequence contains non‐canonical residue 'X' for H0Y8J8
+A0A384DVL6	Empty FASTA for A0A384DVL6
+H0YM23	Sequence contains non‐canonical residue 'X' for H0YM23
+G5E9C7	Empty FASTA for G5E9C7
+H0YEQ8	Sequence contains non‐canonical residue 'X' for H0YEQ8
+F5H6T1	Empty FASTA for F5H6T1
+H0YDG7	Sequence contains non‐canonical residue 'X' for H0YDG7
+H0YHA7	Sequence contains non‐canonical residue 'X' for H0YHA7
+A0A087X2G6	Empty FASTA for A0A087X2G6
+A0A087WYT6	Empty FASTA for A0A087WYT6
+H0Y8C6	Sequence contains non‐canonical residue 'X' for H0Y8C6
+F6TLX2	Empty FASTA for F6TLX2
+H0YAC6	Empty FASTA for H0YAC6
+M0QXS5	Sequence contains non‐canonical residue 'X' for M0QXS5
+J3KTB5	Empty FASTA for J3KTB5
+A0A1W2PQ15	Empty FASTA for A0A1W2PQ15
+A0A3F2YNX0	Sequence contains non‐canonical residue 'X' for A0A3F2YNX0
+A0A140T9L4	Sequence contains non‐canonical residue 'X' for A0A140T9L4
+A0A140T9K1	Sequence contains non‐canonical residue 'X' for A0A140T9K1
+H3BS87	Sequence contains non‐canonical residue 'X' for H3BS87
+H0YDZ4	Sequence contains non‐canonical residue 'X' for H0YDZ4
+A0A140T973	Sequence contains non‐canonical residue 'X' for A0A140T973
+A0A140T9X3	Sequence contains non‐canonical residue 'X' for A0A140T9X3
+J3KT04	Empty FASTA for J3KT04
+A0A1B0GUL7	Empty FASTA for A0A1B0GUL7
+H0YA17	Sequence contains non‐canonical residue 'X' for H0YA17
+A0A087WXZ7	Empty FASTA for A0A087WXZ7
+M0R0P3	Empty FASTA for M0R0P3
+A0A0G2JJZ9	Sequence contains non‐canonical residue 'X' for A0A0G2JJZ9
+H0Y5H2	Sequence contains non‐canonical residue 'X' for H0Y5H2
+H0Y5F5	Sequence contains non‐canonical residue 'X' for H0Y5F5
+A0A140T996	Sequence contains non‐canonical residue 'X' for A0A140T996
+M0R1T0	Empty FASTA for M0R1T0
+H0Y6E1	Sequence contains non‐canonical residue 'X' for H0Y6E1
+C9J7T7	Empty FASTA for C9J7T7
+A0A087WWJ1	Empty FASTA for A0A087WWJ1
+B8ZZI9	Sequence contains non‐canonical residue 'X' for B8ZZI9
+M0R099	Empty FASTA for M0R099
+A0A1W2PQJ7	Empty FASTA for A0A1W2PQJ7
+A0A1W2PNU4	Empty FASTA for A0A1W2PNU4
+H0Y746	Sequence contains non‐canonical residue 'X' for H0Y746
+I3L4K7	Sequence contains non‐canonical residue 'X' for I3L4K7
+K7EIV0	Sequence contains non‐canonical residue 'X' for K7EIV0
+H0YFS9	Sequence contains non‐canonical residue 'X' for H0YFS9
+H0YBE8	Sequence contains non‐canonical residue 'X' for H0YBE8
+A0A087WUL9	Empty FASTA for A0A087WUL9
+H0YB26	Sequence contains non‐canonical residue 'X' for H0YB26
+H3BUD0	Sequence contains non‐canonical residue 'X' for H3BUD0
+H3BLZ3	Sequence contains non‐canonical residue 'X' for H3BLZ3
+H3BTA3	Sequence contains non‐canonical residue 'X' for H3BTA3
+E9PQM1	Empty FASTA for E9PQM1
+H0YN73	Sequence contains non‐canonical residue 'X' for H0YN73
+H0YD73	Sequence contains non‐canonical residue 'X' for H0YD73
+M0R1B6	Sequence contains non‐canonical residue 'X' for M0R1B6
+E9PMN0	Empty FASTA for E9PMN0
+H3BRU6	Sequence contains non‐canonical residue 'X' for H3BRU6
+H3BND9	Sequence contains non‐canonical residue 'X' for H3BND9
+F8W108	Sequence contains non‐canonical residue 'X' for F8W108
+K7ES11	Sequence contains non‐canonical residue 'X' for K7ES11
+H0YIQ0	Sequence contains non‐canonical residue 'X' for H0YIQ0
+A0A7I2V4E0	Sequence contains non‐canonical residue 'X' for A0A7I2V4E0
+A0A7I2V5Z2	Sequence contains non‐canonical residue 'X' for A0A7I2V5Z2
+A0A7I2V2Y7	Sequence contains non‐canonical residue 'X' for A0A7I2V2Y7
+A0A7I2V578	Sequence contains non‐canonical residue 'X' for A0A7I2V578
+A0A087WY61	Empty FASTA for A0A087WY61
+H0Y432	Sequence contains non‐canonical residue 'X' for H0Y432
+A0A7I2YQD3	Sequence contains non‐canonical residue 'X' for A0A7I2YQD3
+H3BR01	Sequence contains non‐canonical residue 'X' for H3BR01
+A0A7I2V593	Sequence contains non‐canonical residue 'X' for A0A7I2V593
+CON__P02584	HTTP 400 for CON__P02584
+H0Y8B3	Sequence contains non‐canonical residue 'X' for H0Y8B3
+H0YFY6	Sequence contains non‐canonical residue 'X' for H0YFY6
+H0YDX1	Sequence contains non‐canonical residue 'X' for H0YDX1
+K7EIG1	Sequence contains non‐canonical residue 'X' for K7EIG1
+H7C3M2	Sequence contains non‐canonical residue 'X' for H7C3M2
+J3QSB2	Sequence contains non‐canonical residue 'X' for J3QSB2
+A0A0U1RQJ8	Sequence contains non‐canonical residue 'X' for A0A0U1RQJ8
+J3QRV9	Sequence contains non‐canonical residue 'X' for J3QRV9
+H3BQ53	Sequence contains non‐canonical residue 'X' for H3BQ53
+H3BSS3	Sequence contains non‐canonical residue 'X' for H3BSS3
+H0YD14	Sequence contains non‐canonical residue 'X' for H0YD14
+C9J3G8	Empty FASTA for C9J3G8
+H0Y5J4	Sequence contains non‐canonical residue 'X' for H0Y5J4
+J3QQJ0	Sequence contains non‐canonical residue 'X' for J3QQJ0
+K7EM16	Sequence contains non‐canonical residue 'X' for K7EM16
+V9GZ17	Sequence contains non‐canonical residue 'X' for V9GZ17
+J3QLH3	Sequence contains non‐canonical residue 'X' for J3QLH3
+A0A087WUM2	Empty FASTA for A0A087WUM2
+A0A494BX66	Empty FASTA for A0A494BX66
+A0A3B3IRQ9	Sequence contains non‐canonical residue 'X' for A0A3B3IRQ9
+H3BV17	Sequence contains non‐canonical residue 'X' for H3BV17
+A0A087WZ65	Sequence contains non‐canonical residue 'X' for A0A087WZ65
+A0A087WTF3	Sequence contains non‐canonical residue 'X' for A0A087WTF3
+A0A087WZD8	Empty FASTA for A0A087WZD8
+A0A5F9ZHM4	Sequence contains non‐canonical residue 'X' for A0A5F9ZHM4
+A0A2R8Y425	Sequence contains non‐canonical residue 'X' for A0A2R8Y425
+A0A2R8YDJ9	Sequence contains non‐canonical residue 'X' for A0A2R8YDJ9
+I3L352	Sequence contains non‐canonical residue 'X' for I3L352
+J3QKW1	Sequence contains non‐canonical residue 'X' for J3QKW1
+K7EPB9	Sequence contains non‐canonical residue 'X' for K7EPB9
+J3KPP6	Sequence contains non‐canonical residue 'X' for J3KPP6
+J3KTP4	Sequence contains non‐canonical residue 'X' for J3KTP4
+H0YBR2	Sequence contains non‐canonical residue 'X' for H0YBR2
+H0Y7F0	Sequence contains non‐canonical residue 'X' for H0Y7F0
+H0Y9H6	Sequence contains non‐canonical residue 'X' for H0Y9H6
+A0A3B3IUB9	Sequence contains non‐canonical residue 'X' for A0A3B3IUB9
+H0YAM7	Sequence contains non‐canonical residue 'X' for H0YAM7
+H0YCF6	Sequence contains non‐canonical residue 'X' for H0YCF6
+A0A087WVC2	Sequence contains non‐canonical residue 'X' for A0A087WVC2
+A0A087WY90	Sequence contains non‐canonical residue 'X' for A0A087WY90
+K7EJH0	Sequence contains non‐canonical residue 'X' for K7EJH0
+F5H7V1	Empty FASTA for F5H7V1
+H7C1K5	Sequence contains non‐canonical residue 'X' for H7C1K5
+A0A2R8YD40	Sequence contains non‐canonical residue 'X' for A0A2R8YD40
+A0A2R8Y4X2	Sequence contains non‐canonical residue 'X' for A0A2R8Y4X2
+A0A2R8Y7I0	Sequence contains non‐canonical residue 'X' for A0A2R8Y7I0
+A0A2R8Y7M9	Sequence contains non‐canonical residue 'X' for A0A2R8Y7M9
+A0A2R8YE38	Sequence contains non‐canonical residue 'X' for A0A2R8YE38
+A0A2R8Y6G9	Sequence contains non‐canonical residue 'X' for A0A2R8Y6G9
+H7C0Y6	Sequence contains non‐canonical residue 'X' for H7C0Y6
+H0YEU2	Sequence contains non‐canonical residue 'X' for H0YEU2
+H7C155	Sequence contains non‐canonical residue 'X' for H7C155
+H0YIB4	Sequence contains non‐canonical residue 'X' for H0YIB4
+H0YJC0	Sequence contains non‐canonical residue 'X' for H0YJC0
+H7BZJ7	Sequence contains non‐canonical residue 'X' for H7BZJ7
+H0Y8W2	Sequence contains non‐canonical residue 'X' for H0Y8W2
+R4GN16	Sequence contains non‐canonical residue 'X' for R4GN16
+A0A087WTP3	Empty FASTA for A0A087WTP3
+H7C278	Empty FASTA for H7C278
+M0R3J3	Sequence contains non‐canonical residue 'X' for M0R3J3
+A0A140T8Z0	Empty FASTA for A0A140T8Z0
+A0A0G2JH68	Empty FASTA for A0A0G2JH68
+E7ERA5	Empty FASTA for E7ERA5
+A0A087X1S3	Sequence contains non‐canonical residue 'X' for A0A087X1S3
+H0Y8R5	Sequence contains non‐canonical residue 'X' for H0Y8R5
+H7C5W9	Sequence contains non‐canonical residue 'X' for H7C5W9
+X6RAE7	Sequence contains non‐canonical residue 'X' for X6RAE7
+F6XU50	Empty FASTA for F6XU50
+H0Y8S8	Sequence contains non‐canonical residue 'X' for H0Y8S8
+I3L1A3	Sequence contains non‐canonical residue 'X' for I3L1A3
+H0YH65	Sequence contains non‐canonical residue 'X' for H0YH65
+H0YGL0	Sequence contains non‐canonical residue 'X' for H0YGL0
+A0A6I8PLA1	Sequence contains non‐canonical residue 'X' for A0A6I8PLA1
+G3V198	Sequence contains non‐canonical residue 'X' for G3V198
+H9KV28	Empty FASTA for H9KV28
+A0A0C4DH00	Empty FASTA for A0A0C4DH00
+A0A0A0MT44	Empty FASTA for A0A0A0MT44
+A0A494BZX8	Sequence contains non‐canonical residue 'X' for A0A494BZX8
+A0A3B3ISR3	Sequence contains non‐canonical residue 'X' for A0A3B3ISR3
+H0Y3W3	Sequence contains non‐canonical residue 'X' for H0Y3W3
+A0A087WTA5	Empty FASTA for A0A087WTA5
+F8W914	Empty FASTA for F8W914
+H7C596	Sequence contains non‐canonical residue 'X' for H7C596
+A0A0C4DGT8	Empty FASTA for A0A0C4DGT8
+A0A1W2PNY4	Sequence contains non‐canonical residue 'X' for A0A1W2PNY4
+H0YEH2	Sequence contains non‐canonical residue 'X' for H0YEH2
+H0YDK8	Sequence contains non‐canonical residue 'X' for H0YDK8
+A0A6I8PS38	Sequence contains non‐canonical residue 'X' for A0A6I8PS38
+A0A1W2PP47	Sequence contains non‐canonical residue 'X' for A0A1W2PP47
+A0A1W2PNW2	Sequence contains non‐canonical residue 'X' for A0A1W2PNW2
+A0A494C172	Empty FASTA for A0A494C172
+H7C106	Sequence contains non‐canonical residue 'X' for H7C106
+H0YEU6	Sequence contains non‐canonical residue 'X' for H0YEU6
+H0YC07	Sequence contains non‐canonical residue 'X' for H0YC07
+A0A7P0TBK3	Sequence contains non‐canonical residue 'X' for A0A7P0TBK3
+H0Y9V7	Sequence contains non‐canonical residue 'X' for H0Y9V7
+I3L1L3	Sequence contains non‐canonical residue 'X' for I3L1L3
+H7C1Q6	Sequence contains non‐canonical residue 'X' for H7C1Q6
+H7C2J2	Sequence contains non‐canonical residue 'X' for H7C2J2
+A0A1W2PQM2	Empty FASTA for A0A1W2PQM2
+A0A087WXN9	Empty FASTA for A0A087WXN9
+H0Y8H5	Sequence contains non‐canonical residue 'X' for H0Y8H5
+A0A3B3ITG6	Sequence contains non‐canonical residue 'X' for A0A3B3ITG6
+H0YDC5	Sequence contains non‐canonical residue 'X' for H0YDC5
+A0A3B3ITK8	Sequence contains non‐canonical residue 'X' for A0A3B3ITK8
+H0YB86	Sequence contains non‐canonical residue 'X' for H0YB86
+H0YD21	Sequence contains non‐canonical residue 'X' for H0YD21
+B3KXD6	Empty FASTA for B3KXD6
+D6RA44	Empty FASTA for D6RA44
+H0YGU7	Sequence contains non‐canonical residue 'X' for H0YGU7
+H7C3Z5	Sequence contains non‐canonical residue 'X' for H7C3Z5
+A0A0A0MQV8	Empty FASTA for A0A0A0MQV8
+H7BZU2	Sequence contains non‐canonical residue 'X' for H7BZU2
+H7C2R5	Sequence contains non‐canonical residue 'X' for H7C2R5
+H0YCG0	Sequence contains non‐canonical residue 'X' for H0YCG0
+H7C3T2	Sequence contains non‐canonical residue 'X' for H7C3T2
+H7BZ20	Sequence contains non‐canonical residue 'X' for H7BZ20
+H7C312	Sequence contains non‐canonical residue 'X' for H7C312
+A0A3B3IST9	Sequence contains non‐canonical residue 'X' for A0A3B3IST9
+A0A3B3ISI2	Sequence contains non‐canonical residue 'X' for A0A3B3ISI2
+H3BR35	Sequence contains non‐canonical residue 'X' for H3BR35
+A0A087X1U9	Empty FASTA for A0A087X1U9
+H7BZZ2	Sequence contains non‐canonical residue 'X' for H7BZZ2
+A0A2R8YG48	Sequence contains non‐canonical residue 'X' for A0A2R8YG48
+M0R042	Empty FASTA for M0R042
+A0A087WY84	Empty FASTA for A0A087WY84
+A0A494C1G3	Sequence contains non‐canonical residue 'X' for A0A494C1G3
+A0A494BZU6	Sequence contains non‐canonical residue 'X' for A0A494BZU6
+A0A3B3ISV1	Sequence contains non‐canonical residue 'X' for A0A3B3ISV1
+A0A0D9SG95	Empty FASTA for A0A0D9SG95
+H7C0X4	Sequence contains non‐canonical residue 'X' for H7C0X4
+A0A087WZU2	Empty FASTA for A0A087WZU2
+H3BRK1	Sequence contains non‐canonical residue 'X' for H3BRK1
+H0Y659	Sequence contains non‐canonical residue 'X' for H0Y659
+H0YJ75	Empty FASTA for H0YJ75
+H7C341	Sequence contains non‐canonical residue 'X' for H7C341
+U3KPS3	Sequence contains non‐canonical residue 'X' for U3KPS3
+H0YJ49	Sequence contains non‐canonical residue 'X' for H0YJ49
+J9JIC5	Empty FASTA for J9JIC5
+H0Y8X6	Sequence contains non‐canonical residue 'X' for H0Y8X6
+H0Y4V9	Sequence contains non‐canonical residue 'X' for H0Y4V9
+H0YI16	Sequence contains non‐canonical residue 'X' for H0YI16
+A0A2R8YE75	Sequence contains non‐canonical residue 'X' for A0A2R8YE75
+H0Y641	Sequence contains non‐canonical residue 'X' for H0Y641
+A0A140T9Z1	Sequence contains non‐canonical residue 'X' for A0A140T9Z1
+A0A087WVV2	Empty FASTA for A0A087WVV2
+H0Y8T4	Sequence contains non‐canonical residue 'X' for H0Y8T4
+A0A087WWS1	Empty FASTA for A0A087WWS1
+A0A1W2PRV5	Empty FASTA for A0A1W2PRV5
+H0Y9Y8	Sequence contains non‐canonical residue 'X' for H0Y9Y8
+A0A494C0Y9	Sequence contains non‐canonical residue 'X' for A0A494C0Y9
+H0Y6A0	Sequence contains non‐canonical residue 'X' for H0Y6A0
+A0A669KBB0	Sequence contains non‐canonical residue 'X' for A0A669KBB0
+H0YDM3	Sequence contains non‐canonical residue 'X' for H0YDM3
+M0QXG2	Sequence contains non‐canonical residue 'X' for M0QXG2
+H0YF32	Sequence contains non‐canonical residue 'X' for H0YF32
+A0A096LP11	Sequence contains non‐canonical residue 'X' for A0A096LP11
+H0YC04	Sequence contains non‐canonical residue 'X' for H0YC04
+H0YAF8	Sequence contains non‐canonical residue 'X' for H0YAF8
+H7C4H2	Sequence contains non‐canonical residue 'X' for H7C4H2
+H7BY64	Sequence contains non‐canonical residue 'X' for H7BY64
+A0A0A0MSU2	Empty FASTA for A0A0A0MSU2
+H7C1C4	Sequence contains non‐canonical residue 'X' for H7C1C4
+F8WAN9	Empty FASTA for F8WAN9
+H0YHB8	Sequence contains non‐canonical residue 'X' for H0YHB8
+H0YK13	Sequence contains non‐canonical residue 'X' for H0YK13
+A0A087WWM4	Empty FASTA for A0A087WWM4
+H0Y6X6	Sequence contains non‐canonical residue 'X' for H0Y6X6
+H0Y960	Sequence contains non‐canonical residue 'X' for H0Y960
+H7C2B5	Sequence contains non‐canonical residue 'X' for H7C2B5
+H7C3N7	Sequence contains non‐canonical residue 'X' for H7C3N7
+H0Y589	Sequence contains non‐canonical residue 'X' for H0Y589
+H0YMR4	Sequence contains non‐canonical residue 'X' for H0YMR4
+I3L4S6	Sequence contains non‐canonical residue 'X' for I3L4S6
+H7C2R9	Sequence contains non‐canonical residue 'X' for H7C2R9
+V9GYQ3	Sequence contains non‐canonical residue 'X' for V9GYQ3
+H0YN22	Sequence contains non‐canonical residue 'X' for H0YN22
+H0YDS9	Sequence contains non‐canonical residue 'X' for H0YDS9
+H0YIS7	Sequence contains non‐canonical residue 'X' for H0YIS7
+H0YB39	Sequence contains non‐canonical residue 'X' for H0YB39
+Q5T795	Empty FASTA for Q5T795
+H7C367	Sequence contains non‐canonical residue 'X' for H7C367
+H0YBG7	Empty FASTA for H0YBG7
+H7BZB3	Sequence contains non‐canonical residue 'X' for H7BZB3
+A0A1B0GWC2	Sequence contains non‐canonical residue 'X' for A0A1B0GWC2
+A0A2R8Y611	Empty FASTA for A0A2R8Y611
+R4GMQ5	Empty FASTA for R4GMQ5
+M0QYT0	Sequence contains non‐canonical residue 'X' for M0QYT0
+H7C1J2	Sequence contains non‐canonical residue 'X' for H7C1J2
+H0Y3M0	Sequence contains non‐canonical residue 'X' for H0Y3M0
+A0A087WYK2	Empty FASTA for A0A087WYK2
+H0Y7T5	Sequence contains non‐canonical residue 'X' for H0Y7T5
+K7EN13	Sequence contains non‐canonical residue 'X' for K7EN13
+H0YJU2	Sequence contains non‐canonical residue 'X' for H0YJU2
+V9GZ64	Sequence contains non‐canonical residue 'X' for V9GZ64
+H0YNM0	Sequence contains non‐canonical residue 'X' for H0YNM0
+A0A0U1RQL3	Sequence contains non‐canonical residue 'X' for A0A0U1RQL3
+H3BR70	Empty FASTA for H3BR70
+A0A2R8Y7Q1	Sequence contains non‐canonical residue 'X' for A0A2R8Y7Q1
+H0Y8C4	Sequence contains non‐canonical residue 'X' for H0Y8C4
+H7C5Q9	Sequence contains non‐canonical residue 'X' for H7C5Q9
+H0YDE4	Sequence contains non‐canonical residue 'X' for H0YDE4
+H0YB71	Sequence contains non‐canonical residue 'X' for H0YB71
+H3BU45	Sequence contains non‐canonical residue 'X' for H3BU45
+Q5JUV4	Empty FASTA for Q5JUV4
+J3KR44	Empty FASTA for J3KR44
+H7BYP9	Sequence contains non‐canonical residue 'X' for H7BYP9
+A0A2R8Y6E3	Sequence contains non‐canonical residue 'X' for A0A2R8Y6E3
+H0Y580	Sequence contains non‐canonical residue 'X' for H0Y580
+A0A6Q8PFD7	Sequence contains non‐canonical residue 'X' for A0A6Q8PFD7
+A0A6Q8PFD1	Sequence contains non‐canonical residue 'X' for A0A6Q8PFD1
+H7C1M5	Sequence contains non‐canonical residue 'X' for H7C1M5
+E7ES68	Sequence contains non‐canonical residue 'X' for E7ES68
+A0A0A0MT49	Empty FASTA for A0A0A0MT49
+E9PE19	Sequence contains non‐canonical residue 'X' for E9PE19
+A0A2R8YG32	Sequence contains non‐canonical residue 'X' for A0A2R8YG32
+A0A2R8YGG3	Sequence contains non‐canonical residue 'X' for A0A2R8YGG3
+A0A2R8Y440	Sequence contains non‐canonical residue 'X' for A0A2R8Y440
+A0A2R8Y526	Sequence contains non‐canonical residue 'X' for A0A2R8Y526
+A0A2R8Y6V2	Sequence contains non‐canonical residue 'X' for A0A2R8Y6V2
+A0A2R8Y523	Sequence contains non‐canonical residue 'X' for A0A2R8Y523
+A0A087WVM7	Sequence contains non‐canonical residue 'X' for A0A087WVM7
+H0Y327	Sequence contains non‐canonical residue 'X' for H0Y327
+H0YKR0	Sequence contains non‐canonical residue 'X' for H0YKR0
+H0Y390	Sequence contains non‐canonical residue 'X' for H0Y390
+A0A0J9YWY6	Sequence contains non‐canonical residue 'X' for A0A0J9YWY6
+H0Y630	Sequence contains non‐canonical residue 'X' for H0Y630
+H7BXT4	Sequence contains non‐canonical residue 'X' for H7BXT4
+A0A2R8Y4C5	Sequence contains non‐canonical residue 'X' for A0A2R8Y4C5
+A0A2R8YF80	Sequence contains non‐canonical residue 'X' for A0A2R8YF80
+A0A2R8YGP5	Sequence contains non‐canonical residue 'X' for A0A2R8YGP5
+I3L4A6	Sequence contains non‐canonical residue 'X' for I3L4A6
+A0A087WZR9	Empty FASTA for A0A087WZR9
+Q5JS72	Empty FASTA for Q5JS72
+H7C3H4	Sequence contains non‐canonical residue 'X' for H7C3H4
+A0A2R8YCX1	Sequence contains non‐canonical residue 'X' for A0A2R8YCX1
+A0A2R8Y7Y7	Sequence contains non‐canonical residue 'X' for A0A2R8Y7Y7
+H3BNK9	Sequence contains non‐canonical residue 'X' for H3BNK9
+A0A087WXR4	Empty FASTA for A0A087WXR4
+J3KSR8	Sequence contains non‐canonical residue 'X' for J3KSR8
+M0R100	Sequence contains non‐canonical residue 'X' for M0R100
+H0YA66	Sequence contains non‐canonical residue 'X' for H0YA66
+H0Y704	Sequence contains non‐canonical residue 'X' for H0Y704
+H0YJY4	Sequence contains non‐canonical residue 'X' for H0YJY4
+H3BR68	Sequence contains non‐canonical residue 'X' for H3BR68
+A0A0A0MSI8	Empty FASTA for A0A0A0MSI8
+H7BZ93	Sequence contains non‐canonical residue 'X' for H7BZ93
+J3QSF1	Sequence contains non‐canonical residue 'X' for J3QSF1
+H0YAZ3	Sequence contains non‐canonical residue 'X' for H0YAZ3
+H7C128	Sequence contains non‐canonical residue 'X' for H7C128
+A0A087WZL9	Empty FASTA for A0A087WZL9
+H0YJG4	Sequence contains non‐canonical residue 'X' for H0YJG4
+H0YJA4	Sequence contains non‐canonical residue 'X' for H0YJA4
+H0Y4F5	Sequence contains non‐canonical residue 'X' for H0Y4F5
+H0Y6T5	Sequence contains non‐canonical residue 'X' for H0Y6T5
+I3L141	Sequence contains non‐canonical residue 'X' for I3L141
+H7C3C1	Sequence contains non‐canonical residue 'X' for H7C3C1
+R4GMM1	Sequence contains non‐canonical residue 'X' for R4GMM1
+I3L3E9	Sequence contains non‐canonical residue 'X' for I3L3E9
+A0A0A0MSJ2	Empty FASTA for A0A0A0MSJ2
+Q5JV08	Sequence contains non‐canonical residue 'X' for Q5JV08
+I3L1Y2	Sequence contains non‐canonical residue 'X' for I3L1Y2
+A0A494C1T2	Sequence contains non‐canonical residue 'X' for A0A494C1T2
+A0A087WVP0	Empty FASTA for A0A087WVP0
+H7C224	Sequence contains non‐canonical residue 'X' for H7C224
+H7C2I6	Sequence contains non‐canonical residue 'X' for H7C2I6
+J3KQR7	Empty FASTA for J3KQR7
+A0A590TQL1	Empty FASTA for A0A590TQL1
+M0QZN3	Sequence contains non‐canonical residue 'X' for M0QZN3
+J3KTF0	Sequence contains non‐canonical residue 'X' for J3KTF0
+A0A087WUZ3	Empty FASTA for A0A087WUZ3
+A0A0G2JNN3	Sequence contains non‐canonical residue 'X' for A0A0G2JNN3
+A0A669KB06	Sequence contains non‐canonical residue 'X' for A0A669KB06
+A0A0D9SFD6	Sequence contains non‐canonical residue 'X' for A0A0D9SFD6
+H0YCZ2	Sequence contains non‐canonical residue 'X' for H0YCZ2
+J3KRH2	Sequence contains non‐canonical residue 'X' for J3KRH2
+K7ELG0	Sequence contains non‐canonical residue 'X' for K7ELG0
+H0YFE9	Sequence contains non‐canonical residue 'X' for H0YFE9
+H7C310	Sequence contains non‐canonical residue 'X' for H7C310
+E9PPJ1	Empty FASTA for E9PPJ1
+A0A0A0MRJ6	Empty FASTA for A0A0A0MRJ6
+H0YBM7	Sequence contains non‐canonical residue 'X' for H0YBM7
+U3KQC1	Sequence contains non‐canonical residue 'X' for U3KQC1
+K7EPJ3	Sequence contains non‐canonical residue 'X' for K7EPJ3
+H7C4C8	Sequence contains non‐canonical residue 'X' for H7C4C8
+H7C5W6	Sequence contains non‐canonical residue 'X' for H7C5W6
+A0A087WTS8	Empty FASTA for A0A087WTS8
+H7C531	Sequence contains non‐canonical residue 'X' for H7C531
+A0A087WYC1	Empty FASTA for A0A087WYC1
+A0A2R8YE59	Sequence contains non‐canonical residue 'X' for A0A2R8YE59
+H0Y6K7	Sequence contains non‐canonical residue 'X' for H0Y6K7
+H7BY36	Sequence contains non‐canonical residue 'X' for H7BY36
+A0A096LPH7	Empty FASTA for A0A096LPH7
+H0YJX5	Sequence contains non‐canonical residue 'X' for H0YJX5
+A0A087WW77	Empty FASTA for A0A087WW77
+A0A0A0MQU0	Sequence contains non‐canonical residue 'X' for A0A0A0MQU0
+H0YAI9	Sequence contains non‐canonical residue 'X' for H0YAI9
+H7C5L4	Sequence contains non‐canonical residue 'X' for H7C5L4
+A0A2U3TZL3	Sequence contains non‐canonical residue 'X' for A0A2U3TZL3
+A0A0B4J2D5	Empty FASTA for A0A0B4J2D5
+Q8IZL8-2	HTTP 404 for Q8IZL8-2
+F5GX68	Empty FASTA for F5GX68
+Q9UBB6-3	HTTP 404 for Q9UBB6-3
+J3KN10	Empty FASTA for J3KN10
+A0A2R8YDX6	Sequence contains non‐canonical residue 'X' for A0A2R8YDX6
+A0A2R8Y422	Empty FASTA for A0A2R8Y422
+CON__Q2YDI2	HTTP 400 for CON__Q2YDI2
+Q9P275-2	HTTP 404 for Q9P275-2
+P21675-4	HTTP 404 for P21675-4
+F5H7X4	Empty FASTA for F5H7X4
+H0YDK9	Sequence contains non‐canonical residue 'X' for H0YDK9
+P13746-2	HTTP 404 for P13746-2
+I3L500	Empty FASTA for I3L500
+Q8ND04-2	Sequence contains non‐canonical residue 'X' for Q8ND04-2
+H0Y2S9	Sequence contains non‐canonical residue 'X' for H0Y2S9
+H7C003	Sequence contains non‐canonical residue 'X' for H7C003
+Q71SY5-3	HTTP 404 for Q71SY5-3
+Q8TE02-4	HTTP 404 for Q8TE02-4
+O15320-5	HTTP 404 for O15320-5
+H0Y512	Sequence contains non‐canonical residue 'X' for H0Y512
+Q9Y2S0-2	HTTP 404 for Q9Y2S0-2
+K7ERN8	Empty FASTA for K7ERN8
+F5H2V0	Empty FASTA for F5H2V0
+J3QLC3	Sequence contains non‐canonical residue 'X' for J3QLC3
+J9JIC7	Sequence contains non‐canonical residue 'X' for J9JIC7
+H3BQD4	Sequence contains non‐canonical residue 'X' for H3BQD4
+E9PPU0	Empty FASTA for E9PPU0
+J3KQT5	Empty FASTA for J3KQT5
+C9IZE4	Empty FASTA for C9IZE4
+H0YL53	Sequence contains non‐canonical residue 'X' for H0YL53
+P50224-3	HTTP 404 for P50224-3
+H0YH33	Sequence contains non‐canonical residue 'X' for H0YH33
+Q9UPS8-3	HTTP 404 for Q9UPS8-3
+E7ETM7	Empty FASTA for E7ETM7
+H0YDK2	Sequence contains non‐canonical residue 'X' for H0YDK2
+H0Y7U1	Empty FASTA for H0Y7U1
+Q96AX9-14	HTTP 404 for Q96AX9-14
+Q86Y91-4	HTTP 404 for Q86Y91-4
+6XLR-A	Sequence contains unknown residue '?' for 6XLR-A
+MASAPIGSAIPRNNWAVTCDSAQSGNECNKAIDGNKDTFWHTFYGANGDPKPPHTYTIDMKTTQNVNGLSVLPRQDGNQNGWIGRHEVYLSSDGTNWGSPVASGSWFADSTTKYSNFETRPARYVRLVAITEANGQPWTSIAEINVFQASSYTAPQPGLGRWGPTIDLPIVPAAAAIEPTSGRVLMWSSYRNDAFEGSPGGITLTSSWDPSTGIVSDRTVTVTKHDMFCPGISMDGNGQIVVTGGNDAKKTSLYDSSSDSWIPGPDMQVARG?QSSATMSDGRVFTIGGSWSGGVFEKNGEVYSPSSKTWTSLPNAKVNPMLTADKQGLYRSDNHAWLFGWKKGSVFQAGPSTAMNWYYTSGSGDVKSAGKRQSNRGVAPDAMCGNAVMYDAVKGKILTFGGSPDYQDSDATTNAHIITLGEPGTSPNTVFASNGLYFARTFHTSVVLPDGSTFITGGQRRGIPFEDSTPVFTPEIYVPEQDTFYKQNPNSIVRAYHSISLLLPDGRVFNGGGGLCGDCTTNHFDAQIFTPNYLYDSNGNLATRPKITRTSTQSVKVGGRITISTDSSISKASLIRYGTATHTVNTDQRRIPLTLTNNGGNSYSFQVPSDSGVALPGYWMLFVMNSAGVPSVASTIRVTQLEHHHHHH
+
+4HVA-A	Sequence contains unknown residue '?' for 4HVA-A
+AFYKREMFDPAEKYKMDHRRRGIALIFNHERFFWHLTLPERRGTCADRDNLTRRFSDLGFEVKCFNDLKAEELLLKIHEVSTVSHADADCFVCVFLSHGEGNHIYAYDAKIEIQTLTGLFKGDKCHSLVGKPKIFIIQACRGNQHDVPVIP??????????????LDVVDAASVYTLPAGADFLMCYSVAEGYYSHRETVNGSWYIQDLCEMLGKYGSSLEFTELLTLVNRKVSQRRVDFCKDPSAIGKKQVPCFASMLTKKLHFFPKSNGNSHHHHHH
+
+2ZJJ-A	Sequence contains unknown residue '?' for 2ZJJ-A
+EMVDNLRGKSGQGYYVEMTVGSPPQTLNILVDTGSSNFAVGAAPHPFLHRYYQRQLSSTYRDLRKGVYVPYTQGAWAGELGTDLVSIPHGPNVTVRANIAAITESDKFFINGSNWEGILGLAYAEIARPDDSLEPFFDSLVKQTHVPNLFSLQLCGAGFPLNQSEVLASVGGSMIIGGIDHSLYTGSLWYTPIRREWYYEVIIVRVEINGQDLKMDCKEYNYDKSIVDSGCTNLRLPKKVFEAAVKSIKAASSTEKFPDGFWLGEQLVCWQAGTTPWNIFPVISLYLMGEVTNQSFRITILPQQYLRPVEDVATSQDDCYKFAISQSSTGTVMGAVIMEGFYVVFDRARKRIGFAVSACHVHDEFRTAAVEGPFVTLDMEDCGYN???????????????????????????????????????????MLPRETDEEPEEPGRRGSFV
+
+2AAZ-I	Sequence contains unknown residue '?' for 2AAZ-I
+PDHEEYQYLDLIRRIINVGEVRPDRTGTGTVALFAPPSFRFSLADNTLPLLTTKRVFLRGVIAELLWFVSGCTDAKMLSSQGVGIWDGNGSKEFLEKVGLGHRREGDLGPVYGFQWRHFGAEYTDADGDYKGKGVDQLQRVIDTIKNNPTDRRIILSAWNPKDLPLMALPPCHMFCQFFVSLPP???PGSKPKLSCLMYQRSCDLGLGVPFNIASYALLTHMIALITDTEPHEFILQMGDAHVYRDHVEPLKTQLEREPRDFPKLKWARSKEEIGDIDGFKVEDFVVEGYKPWGKIDMKMSA
+
+H0Y3R8	Sequence contains non‐canonical residue 'X' for H0Y3R8
+2ZJI-A	Sequence contains unknown residue '?' for 2ZJI-A
+EMVDNLRGKSGQGYYVEMTVGSPPQTLNILVDTGSSNFAVGAAPHPFLHRYYQRQLSSTYRDLRKGVYVPYTQGKWEGELGTDLVSIPHGPNVTVRANIAAITESDKFFINGSNWEGILGLAYAEIARPDDSLEPFFDSLVKQTHVPNLFSLQLCGAGFPLNQSEVLASVGGSMIIGGIDHSLYTGSLWYTPIRREWYYEVIIVRVEINGQDLKMDCKEYNYDKSIVDSGTTNLRLPKKVFEAAVKSIKAASSTEKFPDGFWLGEQLVCWQAGTTPWNIFPVISLYLMGEVTNQSFRITILPQQYLRPVEDVATSQDDCYKFAISQSSCGTVMGAVIMEGFYVVFDRARKRIGFAVSACHVHDEFRTAAVEGPFVTLDMEDCGYN???????????????????????????????????????????MLPRETDEEPEEPGRRGSFV
+
+4XTD-A	Sequence contains unknown residue '?' for 4XTD-A
+GSHMTYRDAATALEHLATYAEKDGLSVEQLMDSKTRGGLTYNDFLVLPGKIDFPSSEVVLSSRLTKKITLNAPFVSSPMDTVTEADMAIHMALLGGIGIIHHNCTAEEQAEMVRRVKKYEN????????????????????????????????????????????????????????????????????????????????????????????????????????????????GSQDGPLASKSADTKQLLCGAAIGTIDADRQRLAMLVEAGLDVVVLDSSQGNSVFQINMIKWIKETFPDLQVIAGNVVTREQAASLIHAGADGLRIGMGSGSICITQEVMACGRPQGTAVYNVTQFANQFGVPCIADGGVQNIGHITKAIALGASTVMMGGMLAGTTESPGEYFFRDGKRLKTYRGMGSIDAMQKTDVKGNAATSRYFSESDKVLVAQGVTGSVIDKGSIKKYIPYLYNGLQHSCQDIGVRSLVEFREKVDSGSVRFEFRTPSAQLEGGVHNLHSYEKRLFD
+
+6EIN-A	Sequence contains unknown residue '?' for 6EIN-A
+SMFLPPPECPVFEPSWEEFADPFAFIHKIRPIAEQTGICKVRPPPDWQPPFACDVDKLHFTPRIQRLNELEA????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????QTRVKLGGGGARDYTLRTFGEMADAFKSDYFNMPVHMVPTELVEKEFWRLVSTIEEDVTVEYGADIASKEFGSGFPVRDGKIKLSPEEEEYLDSGWNLNNMPVMEQSVLAHITADICGMKLPWLYVGMCFSSFCWHIEDHWSYSINYLHWGEPKTWYGVPGYAAEQLENVMKKLAPELFVSQPDLLHQLVTIMNPNTLMTHEVPVYRTNQCAGEFVITFPRAYHSGFNQGFNFAEAVNFCTVDWLPLGRQCVEHYRLLHRYCVFSHDEMICKMASKADVLDVVVASTVQKDMAIMIEDEKALRETVRKLGVIDSERMDFELLPDDERQCVKCKTTCFMSAISCSCKPGLLVCLHHVKELCSCPPYKYKLRYRYTLDDLYPMMNALKLRAESYNEWALNVNEALEAKINK
+
+2ZJL-A	Sequence contains unknown residue '?' for 2ZJL-A
+EMVDNLRGKSGQGYYVEMTVGSPPQTLNILVDTGSSNFAVGAAPHPFLHRYYQRQLSSTYRDLRKGVYVPYTQGKWEGELGTDLVSIPHGPNVTVRANIAAITESDKFFINGSNWEGILGLAYAEIARPDDSLEPFFDSLVKQTHVPNLFSLQLCGAGFPLNQSEVLASVGGSMIIGGIDHSLYTGSLWYTPIRREWYYEVIIVRVEINGQDLKMDCKEYNYDKSIVDSGTTNLRLPKKVFEAAVKSIKAASSTEKFPDGFWLGEQLVCWQAGTTPWNIFPVISLYLMGEVTNQSFRITILPQQYLRPVEDVATSQDDCYKFAISQSSTGTCMGAVIMEGFYVVFDRARKRIGFAVSACHVHDEFRTAAVEGPFVTLDMEDCGYN???????????????????????????????????????????MLPRETDEEPEEPGRRGSFV
+
+3PDS-A	Sequence contains unknown residue '?' for 3PDS-A
+TQQRDEVWVVGMGIVMSLIVLAIVFGNVLVITAIAKFERLQTVTNYFITSLACADLVMGLAVVPFGAACILMKMWTFGNFWCEFWTSIDVLCVTASIETLCVIAVDRYFAITSPFKYQSLLTKNKARVIILMVWIVSGLTSFLPIQMHWYRATHQEAINCYAEETCCDFFTNQAYAIASSIVSFYVPLVIMVFVYSRVFQEAKRQL????????????????????????????????KFCLKEHKALKTLGIIMGTFTLCWLPFFIVNIVHVIQDNLIRKEVYILLNWIGYVNSGFNPLIYCRSPDFRIAFQELLCLRRSSLKHHHHHH???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????NIFEMLRIDEGLRLKIYKDTEGYYTIGIGHLLTKSPSLNAAKSELDKAIGRNTNGVITKDEAEKLFNQDVDAAVRGILRNAKLKPVYDSLDAVRRAALINMVFQMGETGVAGFTNSLRMLQQKRWDEAAVNLAKSRWYNQTPNRAKRVITTFRTGTWDAY
+
+6DQ9-A	Sequence contains unknown residue '?' for 6DQ9-A
+HNMAGVGPGGYAAEFVPPPECPVFEPSWEEFTDPLSFIGRIRPLAEKTGICKIRPPKDWQPPFACEVKSFRFTPRVQRLNELEAM????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????TRVRPREAFGFEQAVREYTLQSFGEMADNFKSDYFNMPVHMVPTELVEKEFWRLVSSIEEDVIVEYGADISSKDFGSGFPVKDGRRKILPEEEEYALSGWNLNNMPVLEQSVLAHINVDISGMKVPWLYVGMCFSSFCWHIEDHWSYSINYLHWGEPKTWYGVPSHAAEQLEEVMRELAPELFESQPDLLHQLVTIMNPNVLMEHGVPVYRTNQCAGEFVVTFPRAYHSGFNQGYNFAEAVNFCT
+
+6ZU8-A	Sequence contains unknown residue '?' for 6ZU8-A
+MGELRVGLEESELWLRFKELTNEMIVTKNGRRMFPVLKVNVSGLDPNAMYSFLLDFVAADNHRWKYVNGEWVPGGKPEPQAPSCVYIHPDSPNFGAHWMKAPVSFSKVKLTNKLNGGGQIMLNSLHKYEPRIHIVRVGDPQRMITSHCFPETQFIAVTAYQNEEITALKIKYNPFAKAFL?DAKERSHHHHHH
+
+5X02-A	Sequence contains unknown residue '?' for 5X02-A
+GPGHKYKKQFRYESQLQMVQVTGSSDNEYFYVDFREYEYDLKWEFPRENLEFGKVLGSGAFGKVMNATAYGISKTGVSIQVAVKMLKEKADSSEREALMSELKMMTQLGSHENIVNLLGACTLSGPIYLIFEYCCYGDLLNYLRSKREKFS???????????????????????????????????????????????????EDEIEYENQKRLEEEEDLNVLTFEDLLCFAYQVAKGMEFLEFKSCVHRDLAARNVLVTHGKVVKICDFGLARDIMSDSNYVVRGNARLPVKWMAPESLFEGIYTIKSDVWSYGILLWEIFSLGVNPYPGIPVDANFYKLIQNGFKMDQPFYATEEIYIIMQSCWAFDSRKRPSFPNLTSFLGCQLADAEEAMYQNV
+
+6XVB-A	Sequence contains unknown residue '?' for 6XVB-A
+GSHMPMYEVQWKVVEESNGNNYSYIDPTQLPYDHKWEFPRNRLSFGKTLGAGAFGKVVEATAQGLIKSDAAMTVAVKMLKPSAHSTEREALMSELKVLSYLGNHENIVNLLGACTHGGPTLVITEYCCYGDLLNFLRRKRDEFVPY????????????????????????????????????????????????????????????KVAPEDLYKDFLTLEHLLSFSYQVAKGMAFLASKNCIHRDLAARNILLTHGNITKICDFGLARDIKNDSNYVDKGNARLPVKWMAPESIFNSVYTFESDVWSYGIFLWELFSLGSSPYPGMPVDSKFYKMIKEGFRMSSPEYAPAEMYDIMKTCWDADPDKRPTFKQIVQDIEKQISESTNH
+
+Q9BV9	HTTP 400 for Q9BV9
+7DNC-A	Failed to download PDB 7DNC
+Q8N402	Empty FASTA for Q8N402
+P59051	Empty FASTA for P59051
+C9JYP6	Empty FASTA for C9JYP6
+G3V1B1	Empty FASTA for G3V1B1
+A6NL99	Empty FASTA for A6NL99
+H0YHV9	Empty FASTA for H0YHV9
+H3BMV2	Empty FASTA for H3BMV2
+Q13748	Empty FASTA for Q13748
+P01233	Empty FASTA for P01233
+F6WH68	Empty FASTA for F6WH68
+E7ERL9	Empty FASTA for E7ERL9
+H0YHG0	Sequence contains non‐canonical residue 'X' for H0YHG0
+O94827-6	HTTP 404 for O94827-6
+F8WBX1	Empty FASTA for F8WBX1
+Q8WV35	Empty FASTA for Q8WV35
+H7C469	Sequence contains non‐canonical residue 'X' for H7C469
+H7C455	Empty FASTA for H7C455
+F8VZB9	Empty FASTA for F8VZB9
+H7BYW4	Empty FASTA for H7BYW4
+I3L290	Empty FASTA for I3L290
+I3L097	Empty FASTA for I3L097
+A9Z1Z3	Empty FASTA for A9Z1Z3
+C9JHY2	Empty FASTA for C9JHY2
+F6X838	Empty FASTA for F6X838

@@ -1,0 +1,76 @@
+ORIGINAL RAW-LINE COUNTS
+------------------------
+  Single-value lines : 664193
+  Ambiguous lines    : 5764
+  Multi-value lines  : 1998
+
+POST-SPLITTING COUNTS
+---------------------
+  Total records after splitting            : 683499
+    Split from ambiguous originals         : 12160
+    Split from multi-value originals       : 7146
+
+RECORDS PER SOURCE (AFTER SPLITTING)
+------------------------------------
+  TY2025          423220
+  KG2021          63879
+  BB2023          41432
+  VC2020          40333
+  TC2022          40156
+  BB2024          25640
+  KC2023          14322
+  YW2022          8591
+  YB2021          7493
+  BC2016          6440
+  PC2017          4192
+  CB2021          3594
+  YB2023          2199
+  NC2024          862
+  BB2025          839
+  LS2024          307
+
+PROTEIN-LEVEL METRICS
+---------------------
+  Total unique proteins (all sources)      : 14722
+  Unique proteins per source:
+    BB2023          4933
+    BB2024          3122
+    BB2025          416
+    BC2016          2885
+    CB2021          1481
+    KC2023          6676
+    KG2021          6902
+    LS2024          305
+    NC2024          218
+    PC2017          904
+    TC2022          3999
+    TY2025          7170
+    VC2020          6551
+    YB2021          3186
+    YB2023          1374
+    YW2022          3799
+
+UNIQUE (UID,ROI) CONTRIBUTIONS PER SOURCE
+-----------------------------------------
+  BB2023          2385
+  BB2024          251
+  BB2025          83
+  BC2016          316
+  CB2021          28
+  KC2023          5124
+  KG2021          13314
+  LS2024          307
+  NC2024          37
+  PC2017          147
+  TC2022          449
+  TY2025          4393
+  VC2020          3576
+  YB2021          490
+  YB2023          193
+  YW2022          553
+
+OVERALL UID+ROI STATISTICS
+--------------------------
+  Total distinct (UID,ROI) pairs          : 59011
+  Pairs shared across multiple sources     : 27365
+  Pairs unique to exactly one source      : 31646
