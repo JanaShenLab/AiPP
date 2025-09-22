@@ -1,0 +1,315 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Prune FASTA entries or .pt dataset entries based on cysteine-group membership
+and write a log.
+
+Semantics:
+1) Parse cysteine group report into groups of UIDs (by group id).
+2) Find groups that include any UID from the reference FASTA.
+3) If --prune is a FASTA: write only entries whose UID is NOT in any group
+   that also contains a reference UID.
+   If --prune is a .pt: drop whole items whose entry["pdb"] is in any such group.
+4) Write pruning_report.log with a rationale for each pruned entry.
+
+Notes:
+- UID is the first token after '>' in FASTA headers (up to the first space).
+- In the report, member lines look like 'UID:ROI ...' — we only need the UID
+  (the part before the first colon).
+- For .pt datasets, UIDs are matched EXACTLY to entry['pdb'].
+"""
+
+import argparse
+import os
+import re
+import sys
+from collections import defaultdict
+from typing import Dict, Set, Tuple, List
+
+from tqdm import tqdm
+
+try:
+    import torch  # required for .pt mode
+except Exception:
+    torch = None
+
+
+def read_fasta_uids(path: str, desc: str) -> Set[str]:
+    """Scan a FASTA and collect UIDs from headers (first token after '>')."""
+    uids = set()
+    pat = re.compile(r"^>(\S+)")
+    with open(path, "rt") as fh:
+        for line in tqdm(fh, desc=desc, ncols=80, unit="lines"):
+            if line.startswith(">"):
+                m = pat.match(line)
+                if m:
+                    uids.add(m.group(1))
+    return uids
+
+
+def fasta_iter(path: str, desc: str):
+    """Yield (header, seq) for each FASTA record, as seen (no re-wrapping)."""
+    header = None
+    chunks = []
+    with open(path, "rt") as fh:
+        for line in tqdm(fh, desc=desc, ncols=80, unit="lines"):
+            if line.startswith(">"):
+                if header is not None:
+                    yield header, "".join(chunks)
+                header = line.rstrip("\n")
+                chunks = []
+            else:
+                chunks.append(line)
+    if header is not None:
+        yield header, "".join(chunks)
+
+
+def parse_group_report(path: str) -> Tuple[Dict[int, Set[str]], Dict[str, Set[int]]]:
+    """
+    Read the cysteine group report.
+
+    We ignore the banner. For lines like "Group N: repr=...", we start a new
+    group with id=N. For member lines like "  UID:ROI ...", we capture UID.
+
+    Returns:
+        groups: dict[int, set[str]]  (gid -> set of UIDs)
+        uid_to_gids: dict[str, set[int]] (UID -> group ids it appears in)
+    """
+    groups: Dict[int, Set[str]] = {}
+    uid_to_gids: Dict[str, Set[int]] = defaultdict(set)
+
+    gid = None
+    gid_pat = re.compile(r"^\s*Group\s+(\d+):")
+    # capture UID (before first colon) from lines like "  UID:ROI ..."
+    uid_pat = re.compile(r"^\s*([^\s:]+):")
+
+    with open(path, "rt") as fh:
+        for line in tqdm(fh, desc="parse groups", ncols=80, unit="lines"):
+            mg = gid_pat.match(line)
+            if mg:
+                gid = int(mg.group(1))
+                if gid not in groups:
+                    groups[gid] = set()
+                continue
+
+            mm = uid_pat.match(line)
+            if mm and gid is not None:
+                uid = mm.group(1)
+                groups[gid].add(uid)
+                uid_to_gids[uid].add(gid)
+
+    return groups, uid_to_gids
+
+
+def header_uid(header: str) -> str:
+    """Pull UID from a FASTA header line (expects it starts with '>')."""
+    return header[1:].split(None, 1)[0]
+
+
+def compute_forbidden(groups: Dict[int, Set[str]], ref_uids: Set[str]):
+    """
+    Union all groups that intersect ref_uids.
+    Members of these groups are 'forbidden' for output.
+    Also return a map gid -> ref members in that group (for logging).
+    """
+    forbidden: Set[str] = set()
+    gid_to_ref: Dict[int, Set[str]] = {}
+    for gid, members in groups.items():
+        ref_in_group = members & ref_uids
+        if ref_in_group:
+            forbidden.update(members)
+            gid_to_ref[gid] = set(ref_in_group)
+    return forbidden, gid_to_ref
+
+
+def prune_fasta(prune_path, out_path, forbidden, groups, uid_to_gids,
+                gid_to_ref, log_path):
+    """
+    Write FASTA records whose UID is NOT in forbidden.
+    Log a rationale for each dropped UID.
+    """
+    kept = 0
+    dropped = 0
+    with open(out_path, "wt") as out_fh, open(log_path, "wt") as log_fh:
+        log_fh.write("# pruning_report.log\n")
+        log_fh.write("# rationale for each pruned UID\n")
+
+        for hdr, seq in fasta_iter(prune_path, "scan prunable"):
+            uid = header_uid(hdr)
+            if uid in forbidden:
+                dropped += 1
+                gids = sorted(uid_to_gids.get(uid, []))
+                pruned_gids = [g for g in gids if g in gid_to_ref]
+                if not pruned_gids:
+                    log_fh.write(f"UID {uid} pruned: in ref-marked group(s) [unknown]\n")
+                else:
+                    for g in pruned_gids:
+                        refs = sorted(gid_to_ref[g])
+                        refs_s = ",".join(refs) if refs else "None"
+                        size = len(groups.get(g, []))
+                        log_fh.write(
+                            f"UID {uid} pruned: group {g} (members={size}) has ref UID(s): {refs_s}\n"
+                        )
+                continue
+
+            out_fh.write(hdr + "\n")
+            out_fh.write(seq)
+            if not seq.endswith("\n"):
+                out_fh.write("\n")
+            kept += 1
+    return kept, dropped
+
+
+def prune_pt(prune_path, out_path, forbidden, groups, uid_to_gids,
+             gid_to_ref, log_path):
+    """
+    Load a .pt dataset (list of dicts), drop items whose entry['pdb'] is in
+    'forbidden', save filtered dataset, and log a rationale for each drop.
+    """
+    if torch is None:
+        print("ERROR: PyTorch is required for .pt mode but not available.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Loading dataset from {prune_path} …")
+    dataset = torch.load(prune_path, map_location="cpu")
+    try:
+        n_in = len(dataset)
+    except TypeError:
+        print("ERROR: Expected a sequence-like dataset in .pt.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f" → loaded {n_in} entries")
+
+    kept_list: List[dict] = []
+    dropped = 0
+
+    with open(log_path, "wt") as log_fh:
+        log_fh.write("# pruning_report.log\n")
+        log_fh.write("# rationale for each pruned UID\n")
+
+        for entry in tqdm(dataset, desc="scan prunable (.pt)", ncols=80):
+            pdb = entry.get("pdb")
+            if pdb is None:
+                # Keep conservative: don't drop entries lacking 'pdb'
+                kept_list.append(entry)
+                continue
+
+            uid = str(pdb)
+            if uid in forbidden:
+                dropped += 1
+                gids = sorted(uid_to_gids.get(uid, []))
+                pruned_gids = [g for g in gids if g in gid_to_ref]
+                if not pruned_gids:
+                    log_fh.write(f"UID {uid} pruned: in ref-marked group(s) [unknown]\n")
+                else:
+                    for g in pruned_gids:
+                        refs = sorted(gid_to_ref[g])
+                        refs_s = ",".join(refs) if refs else "None"
+                        size = len(groups.get(g, []))
+                        log_fh.write(
+                            f"UID {uid} pruned: group {g} (members={size}) has ref UID(s): {refs_s}\n"
+                        )
+            else:
+                kept_list.append(entry)
+
+    n_kept = len(kept_list)
+    assert n_kept + dropped == n_in
+
+    torch.save(kept_list, out_path)
+    return n_kept, dropped
+
+
+def detect_is_pt(path: str) -> bool:
+    """
+    Robustly detect whether 'path' is a .pt dataset:
+      - case-insensitive filename check
+      - if inconclusive and torch is available, try torch.load sniff
+    """
+    lower = path.lower()
+    if lower.endswith(".pt"):
+        return True
+    if torch is not None:
+        try:
+            torch.load(path, map_location="cpu")
+            print("[info] auto-detected .pt dataset by load test")
+            return True
+        except Exception:
+            return False
+    return False
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        prog="prune_by_cys_groups",
+        description=(
+            "Keep entries whose UID is not in any cysteine group that "
+            "also contains a UID from the reference FASTA. Works on FASTA "
+            "or on a .pt dataset (drops whole entries). Writes a pruning "
+            "report explaining each pruned UID."
+        ),
+    )
+    ap.add_argument(
+        "--prune", required=True, metavar="prunable.{fasta,fa,pt}",
+        help="Input to prune: FASTA/FA or .pt dataset (auto-detected)."
+    )
+    ap.add_argument(
+        "--ref", required=True, metavar="reference.fasta",
+        help="Reference FASTA; any group with a UID from here is excluded."
+    )
+    ap.add_argument(
+        "--rep", required=True, metavar="cys_group_report.txt",
+        help="Cysteine group report listing groups and members."
+    )
+    ap.add_argument(
+        "--out", required=True, metavar="output.{fasta,pt}",
+        help="Output file: FASTA if input is FASTA, .pt if input is .pt."
+    )
+    ap.add_argument(
+        "--log", required=False, metavar="pruning_report.log",
+        help="Path for a human-readable pruning report. Default: <out>.log"
+    )
+    args = ap.parse_args()
+
+    # Decide file type robustly
+    is_pt = detect_is_pt(args.prune)
+    print(f"[info] input mode: {'.pt dataset' if is_pt else 'FASTA'}")
+
+    # Soft validation of output extension (warn instead of hard-fail)
+    out_ext = os.path.splitext(args.out)[1].lower()
+    if is_pt and out_ext != ".pt":
+        print("WARNING: --prune is .pt but --out does not have .pt extension.", file=sys.stderr)
+    if (not is_pt) and out_ext == ".pt":
+        print("WARNING: --prune is FASTA but --out has .pt extension.", file=sys.stderr)
+
+    log_path = args.log if args.log else f"{args.out}.log"
+
+    # 1) Collect UIDs present in the reference FASTA (user confirmed it's FASTA)
+    ref_uids = read_fasta_uids(args.ref, "scan reference")
+    print(f"[info] reference UIDs: {len(ref_uids)}")
+
+    # 2) Parse the group report
+    groups, uid_to_gids = parse_group_report(args.rep)
+    print(f"[info] groups parsed: {len(groups)}")
+
+    # 3) Compute forbidden UIDs and ref-membership per group
+    forbidden, gid_to_ref = compute_forbidden(groups, ref_uids)
+    print(f"[info] forbidden UIDs (in ref groups): {len(forbidden)}")
+
+    # 4) Prune based on input type
+    if is_pt:
+        kept, dropped = prune_pt(
+            args.prune, args.out, forbidden, groups, uid_to_gids, gid_to_ref, log_path
+        )
+    else:
+        kept, dropped = prune_fasta(
+            args.prune, args.out, forbidden, groups, uid_to_gids, gid_to_ref, log_path
+        )
+
+    print(f"[done] kept: {kept}, dropped: {dropped}, out: {args.out}")
+    print(f"[done] log: {log_path}")
+
+
+if __name__ == "__main__":
+    main()
+
