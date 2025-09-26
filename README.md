@@ -7,7 +7,7 @@ Companion repository for:
 
 ## Archived artifacts (immutable, citable)
 
-- **LigCys model weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.XXXXXXX`
+- **LigCys model weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210112)`
 - **LigCys training/eval embeddings v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.YYYYYYY`
 - **LigCys training datasets v1.0.0 (Zenodo)**  — DOI: `10.5281/zenodo.17193767`
   
