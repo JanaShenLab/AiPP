@@ -7,7 +7,7 @@ Companion repository for:
 ## Archived artifacts (immutable, citable)
 
 - **LigCys ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210112)`
-- **ESMC embeddings used by LigCys v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.YYYYYYY`
+- **ESMC embeddings used by LigCys v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210943`
 - **Packed datasets used to train LigCys v1.0.0 (Zenodo)**  — DOI: `10.5281/zenodo.17193767`
   
 - **LigBind ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210749)`
