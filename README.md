@@ -8,7 +8,7 @@ Companion repository for:
 
 - **LigCys ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210112)` 
 - **LigBind ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210749)`
-- 
+ 
 - **ESMC embeddings used by LigCys v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210943`
 - **ESMC embeddings used by LigBind v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17204577`
  
