@@ -12,19 +12,6 @@ Unless otherwise noted, this repositories content is © 2025 Guy W. Dayhoff II a
 
 Plain English: You may copy, adapt, and share the repositories content for non-commercial purposes as long as you provide proper attribution. For any commercial use, please contact the authors for permission.
 
-## Archived artifacts (immutable, citable)
-
-- **LigCys ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210112` 
-- **LigBind ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210749`
- 
-- **ESMC embeddings used by LigCys v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210943`
-- **ESMC embeddings used by LigBind v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17204577`
- 
-- **Packed datasets used to train LigCys v1.0.0 (Zenodo)**  — DOI: `10.5281/zenodo.17193767`
-- **Packed datasets used to train LigBind v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17204149`
-  
-- **Annotated/complete structures used to construct LigBind3D v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17209968`
-
 # Web-based Inference and Atlas Exploration
 
 We provide a browser-based AiPP interface for both on-demand
@@ -320,3 +307,17 @@ Each subsequent line corresponds to a residue position.
 The CLI echoes the full command line used to invoke it immediately
 after the splash screen. This makes it straightforward to record and
 reproduce runs from logs or publications.
+
+## Archived artifacts (immutable, citable)
+
+- **LigCys ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210112` 
+- **LigBind ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210749`
+ 
+- **ESMC embeddings used by LigCys v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210943`
+- **ESMC embeddings used by LigBind v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17204577`
+ 
+- **Packed datasets used to train LigCys v1.0.0 (Zenodo)**  — DOI: `10.5281/zenodo.17193767`
+- **Packed datasets used to train LigBind v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17204149`
+  
+- **Annotated/complete structures used to construct LigBind3D v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17209968`
+
