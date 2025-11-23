@@ -30,9 +30,6 @@ Command-line interface for running AiPP residue-level predictions
 (SSBind, LigBind, ZNBind, LigCys) on protein sequences using ESM-C
 embeddings and pre-trained weights.
 
-This repository is designed for use in publications and automated
-pipelines (e.g. Zenodo-backed archives).
-
 ---
 
 ## Repository layout
