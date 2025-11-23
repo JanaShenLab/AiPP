@@ -25,20 +25,28 @@ Plain English: You may copy, adapt, and share the repositories content for non-c
   
 - **Annotated/complete structures used to construct LigBind3D v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17209968`
 
-# Web-based Inference Interface
+# Web-based Inference and Atlas Exploration
 
-We provide a browser-based AiPP prediction interface for users who
-prefer not to run the command-line tools locally:
+We provide a browser-based AiPP interface for both on-demand
+predictions and interactive exploration of a precomputed human
+proteome atlas:
 
-    https://aipp.computchem.org/#predict
+    Home:      https://aipp.computchem.org
+    Inference: https://aipp.computchem.org/#predict
+    Atlas:     https://aipp.computchem.org/#explore
 
-This interface runs the same AiPP models described in the manuscript
-and uses ESM-C (`esmc-6b-2024-12`) via the EvolutionaryScale Forge API
-for protein embeddings.
+The web tools run the same AiPP models described in the manuscript and
+use ESM-C (`esmc-6b-2024-12`) via the EvolutionaryScale Forge API for
+protein embeddings where on-demand inference is required.
 
-### Requirements
+------------------------------------------------------------
+Web-based inference: /#predict
+------------------------------------------------------------
 
-To use the web-based interface you will need:
+The `/#predict` view provides a simple front end to the AiPP inference
+pipeline for user-supplied sequences.
+
+Requirements:
 
 - A modern web browser.
 - An active ESM Forge API token issued by EvolutionaryScale.
@@ -46,47 +54,77 @@ To use the web-based interface you will need:
 The AiPP web interface does not issue Forge tokens. Each user must
 obtain and manage their own token directly from EvolutionaryScale.
 
-### Obtaining an ESM Forge API token
+Obtaining an ESM Forge API token:
 
 1. Visit the EvolutionaryScale Forge site:
 
        https://forge.evolutionaryscale.ai
 
 2. Sign up or sign in with your account.
-3. Navigate to the “Console” (or equivalent account / API section).
+3. Navigate to the account / API / Console section.
 4. Create a new Forge API token and copy the token string.
 
-EvolutionaryScale’s documentation for ESM and Forge is hosted at:
+Treat this token as a secret (similar to a password); do not publish
+or commit it.
 
-- ESM GitHub repository:
-      https://github.com/evolutionaryscale/esm
-- ESM Python package (Forge usage details are in the README):
-      https://pypi.org/project/esm/
+Using the token in the AiPP `/#predict` interface:
 
-In their examples, the Forge token is passed to the client as:
+1. Open:
 
-    token="<your forge token>"
+       https://aipp.computchem.org/#predict
 
-Treat this token like a password: do not share it publicly or commit it
-to version control.
+2. Paste your protein sequence(s) into the sequence input area (or
+   upload a FASTA file, if supported).
+3. Paste your ESM Forge API token into the token field.
+4. Select the desired AiPP models / tasks (e.g. LigBind, LigCys,
+   SSBind, ZNBind), if exposed in the UI.
+5. Submit to run predictions.
 
-### Using the token in the AiPP web interface
-
-On the AiPP prediction page:
-
-1. Paste your protein sequence(s) into the sequence input area (or
-   upload a FASTA file, if supported by the interface).
-2. Paste your ESM Forge API token into the token field.
-3. Select the desired AiPP models / tasks (e.g. LigBind, LigCys,
-   SSBind, ZNBind), if the interface exposes such options.
-4. Submit the job to run predictions.
-
-The token is used to obtain ESM-C embeddings for your sequences via the
-Forge API; AiPP then applies the pre-trained AiPP heads to produce
-residue-level predictions.
+The Forge token is used only to obtain ESM-C embeddings for your
+sequences via the Forge API; AiPP then applies the pre-trained AiPP
+heads to produce residue-level predictions.
 
 Please follow EvolutionaryScale’s terms of use and your institution’s
 policies when requesting, storing, and using Forge API tokens.
+
+------------------------------------------------------------
+Precomputed human AiPP atlas: /#explore
+------------------------------------------------------------
+
+The `/#explore` view provides interactive access to a precomputed
+AiPP “human atlas” of predictions across the druggable human proteome.
+
+Key points:
+
+- Predictions in this atlas were precomputed using the AiPP models and
+  ESM-C embeddings described in the manuscript.
+- Exploration of the atlas (searching, browsing, viewing scores) does
+  not require an ESM Forge token, because no new embeddings or model
+  inference are run client-side.
+- The atlas is intended as a convenient starting point for exploring
+  residue-level predictions without installing local software.
+
+Typical usage:
+
+1. Open:
+
+       https://aipp.computchem.org/#explore
+
+2. Search or browse for a protein of interest (e.g. by gene or
+   accession, depending on the UI).
+3. Inspect the per-residue AiPP scores (LigCys, LigBind, SSBind,
+   ZNBind, etc.) and any additional annotations provided.
+4. Use the web interface as a guide to select targets / residues for
+   more detailed local analyses using the command-line interface and
+   Zenodo-hosted weights and datasets.
+
+The home page at:
+
+    https://aipp.computchem.org
+
+provides a consolidated entry point to both the prediction interface
+and the human atlas, along with brief explanatory text about the AiPP
+platform.
 
 # Command-line Inference Interface 
 Command-line interface for running AiPP residue-level predictions
