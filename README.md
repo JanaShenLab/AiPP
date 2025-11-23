@@ -29,7 +29,7 @@ BibTeX:
 
 Unless otherwise noted, this repository’s content is © 2025 Guy W. Dayhoff II and Jana Shen (on behalf of all authors) and is licensed under Creative Commons Attribution–NonCommercial 4.0 International (CC BY-NC 4.0).
 
-Plain English: You may copy, adapt, and share the repositories content for non-commercial purposes as long as you provide proper attribution. For any commercial use, please contact the authors for permission.
+Plain English: You may copy, adapt, and share the repository’s content for non-commercial purposes as long as you provide proper attribution. For any commercial use, please contact the authors for permission.
 
 # Web-based Inference and Atlas Exploration
 
@@ -69,7 +69,7 @@ Obtaining an ESM Forge API token:
 2. Sign up or sign in with your account.
 3. In the leftmost menu, under the API header select 'API Keys'
 4. In the textbox with the 'API Key Name' placehold text, name your key, e.g. aipp
-4. Create a new Forge API token and copy the token string.
+5. Create a new Forge API token and copy the token string.
 
 Treat this token as a secret (similar to a password); do not publish
 or commit it.
