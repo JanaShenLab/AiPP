@@ -1,7 +1,7 @@
 # AiPP: Artificial Intelligence Protein Profiling
+
 Companion repository for:
--  lluminating the Druggable Human Proteome with an AI Protein Profiling Platform"
--  Dayhoff II, Guy W., Daniel Kortzak, Ruibin Liu, Mingzhe Shen, Zhong-Yin Zhang, and Jana Shen. "Illuminating the Druggable Human Proteome with an AI Protein Profiling Platform." (2025)
+-  Dayhoff, Guy W., et al. "Illuminating the Druggable Human Proteome with an AI Protein Profiling Platform." bioRxiv (2025): 2025-09.
 -  https://www.biorxiv.org/content/10.1101/2025.09.07.670677v2
 
 ## How to cite AiPP
