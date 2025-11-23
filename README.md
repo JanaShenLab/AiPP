@@ -334,13 +334,15 @@ reproduce runs from logs or publications.
 # Archived artifacts (immutable, citable)
 
 - **LigCys ensemble weights v1.0.0 (Zenodo)** — DOI: `https://doi.org/10.5281/zenodo.17210111` 
-- **LigBind ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210749`
+- **LigBind ensemble weights v1.0.0 (Zenodo)** — DOI: `https://doi.org/10.5281/zenodo.17210748`
+- **SSBind ensemble weights v1.0.0 (Zenodo)** - DOI: `https://doi.org/10.5281/zenodo.17693473`
+- **ZNBind ensemble weights v1.0.0 (Zenodo)** - DOI: `https://doi.org/10.5281/zenodo.17692130`
  
-- **ESMC embeddings used by LigCys v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210943`
-- **ESMC embeddings used by LigBind v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17204577`
+- **ESMC embeddings used by LigCys v1.0.0 (Zenodo)** — DOI: `https://doi.org/10.5281/zenodo.17210943`
+- **ESMC embeddings used by LigBind v1.0.0 (Zenodo)** — DOI: `https://doi.org/10.5281/zenodo.17204577`
  
-- **Packed datasets used to train LigCys v1.0.0 (Zenodo)**  — DOI: `10.5281/zenodo.17193767`
-- **Packed datasets used to train LigBind v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17204149`
+- **Packed datasets used to train LigCys v1.0.0 (Zenodo)**  — DOI: `https://doi.org/10.5281/zenodo.17193767`
+- **Packed datasets used to train LigBind v1.0.0 (Zenodo)** — DOI: `https://doi.org/10.5281/zenodo.17204149`
   
-- **Annotated/complete structures used to construct LigBind3D v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17209968`
+- **Annotated/complete structures used to construct LigBind3D v1.0.0 (Zenodo)** — DOI: `https://doi.org/10.5281/zenodo.17209968`
 
