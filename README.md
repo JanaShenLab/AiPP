@@ -27,7 +27,66 @@ Plain English: You may copy, adapt, and share the repositories content for non-c
 
 # Web-based Inference Interface
 
-https://aipp.computchem.org/#predict
+We provide a browser-based AiPP prediction interface for users who
+prefer not to run the command-line tools locally:
+
+    https://aipp.computchem.org/#predict
+
+This interface runs the same AiPP models described in the manuscript
+and uses ESM-C (`esmc-6b-2024-12`) via the EvolutionaryScale Forge API
+for protein embeddings.
+
+### Requirements
+
+To use the web-based interface you will need:
+
+- A modern web browser.
+- An active ESM Forge API token issued by EvolutionaryScale.
+
+The AiPP web interface does not issue Forge tokens. Each user must
+obtain and manage their own token directly from EvolutionaryScale.
+
+### Obtaining an ESM Forge API token
+
+1. Visit the EvolutionaryScale Forge site:
+
+       https://forge.evolutionaryscale.ai
+
+2. Sign up or sign in with your account.
+3. Navigate to the “Console” (or equivalent account / API section).
+4. Create a new Forge API token and copy the token string.
+
+EvolutionaryScale’s documentation for ESM and Forge is hosted at:
+
+- ESM GitHub repository:
+      https://github.com/evolutionaryscale/esm
+- ESM Python package (Forge usage details are in the README):
+      https://pypi.org/project/esm/
+
+In their examples, the Forge token is passed to the client as:
+
+    token="<your forge token>"
+
+Treat this token like a password: do not share it publicly or commit it
+to version control.
+
+### Using the token in the AiPP web interface
+
+On the AiPP prediction page:
+
+1. Paste your protein sequence(s) into the sequence input area (or
+   upload a FASTA file, if supported by the interface).
+2. Paste your ESM Forge API token into the token field.
+3. Select the desired AiPP models / tasks (e.g. LigBind, LigCys,
+   SSBind, ZNBind), if the interface exposes such options.
+4. Submit the job to run predictions.
+
+The token is used to obtain ESM-C embeddings for your sequences via the
+Forge API; AiPP then applies the pre-trained AiPP heads to produce
+residue-level predictions.
+
+Please follow EvolutionaryScale’s terms of use and your institution’s
+policies when requesting, storing, and using Forge API tokens.
 
 # Command-line Inference Interface 
 Command-line interface for running AiPP residue-level predictions
