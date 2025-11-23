@@ -73,12 +73,9 @@ Using the token in the AiPP `/#predict` interface:
 
        https://aipp.computchem.org/#predict
 
-2. Paste your protein sequence(s) into the sequence input area (or
-   upload a FASTA file, if supported).
+2. Enter your protein sequence, UniProtID, or PDBID-CHAINID into the input box.
 3. Paste your ESM Forge API token into the token field.
-4. Select the desired AiPP models / tasks (e.g. LigBind, LigCys,
-   SSBind, ZNBind), if exposed in the UI.
-5. Submit to run predictions.
+4. Submit to run predictions.
 
 The Forge token is used only to obtain ESM-C embeddings for your
 sequences via the Forge API; AiPP then applies the pre-trained AiPP
