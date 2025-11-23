@@ -25,7 +25,11 @@ Plain English: You may copy, adapt, and share the repositories content for non-c
   
 - **Annotated/complete structures used to construct LigBind3D v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17209968`
 
-This GitHub is currently under construction while the above paper undergoes review.
+---
+<br>
+<br>
+<br>
+
 # Command-line Inference Interface for Cysteine-Directed Artifical Intelligence Protein Profiling
 
 Command-line interface for running AiPP residue-level predictions
