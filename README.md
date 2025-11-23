@@ -8,20 +8,20 @@ Companion repository for:
 If you use the AiPP models, command-line interface, or web-based atlas
 in your work, please cite:
 
-  Dayhoff II, Guy W., Daniel Kortzak, Ruibin Liu, Mingzhe Shen,
-  Zhong-Yin Zhang, and Jana Shen. "Illuminating the Druggable Human
-  Proteome with an AI Protein Profiling Platform." bioRxiv (2025).
+    Dayhoff II, Guy W., Daniel Kortzak, Ruibin Liu, Mingzhe Shen,
+    Zhong-Yin Zhang, and Jana Shen. "Illuminating the Druggable Human
+    Proteome with an AI Protein Profiling Platform." bioRxiv (2025).
 
 BibTeX:
 
-  @article{dayhoff2025illuminating,
-    title={Illuminating the Druggable Human Proteome with an AI Protein Profiling Platform},
-    author={Dayhoff, Guy W and Kortzak, Daniel and Liu, Ruibin and Shen, Mingzhe and Zhang, Zhong-Yin and Shen, Jana},
-    journal={bioRxiv},
-    pages={2025--09},
-    year={2025},
-    publisher={Cold Spring Harbor Laboratory}
-  }
+    @article{dayhoff2025illuminating,
+      title={Illuminating the Druggable Human Proteome with an AI Protein Profiling Platform},
+      author={Dayhoff, Guy W and Kortzak, Daniel and Liu, Ruibin and Shen, Mingzhe and Zhang, Zhong-Yin and Shen, Jana},
+      journal={bioRxiv},
+      pages={2025--09},
+      year={2025},
+      publisher={Cold Spring Harbor Laboratory}
+    }
 
 ## License ## 
 **License** Content © 2025 Guy W. Dayhoff II and Jana Shen, licensed under
