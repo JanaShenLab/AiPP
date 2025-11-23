@@ -99,7 +99,8 @@ Key points:
   not require an ESM Forge token, because no new embeddings or model
   inference are run client-side.
 - The atlas is intended as a convenient starting point for exploring
-  residue-level predictions without installing local software.
+  residue-level predictions and associated experimental data without
+  installing local software.
 
 Typical usage:
 
@@ -107,13 +108,40 @@ Typical usage:
 
        https://aipp.computchem.org/#explore
 
-2. Search or browse for a protein of interest (e.g. by gene or
-   accession, depending on the UI).
+2. Search or browse for a protein of interest by UniProtKB accession
+   or gene name.
 3. Inspect the per-residue AiPP scores (LigCys, LigBind, SSBind,
    ZNBind, etc.) and any additional annotations provided.
-4. Use the web interface as a guide to select targets / residues for
-   more detailed local analyses using the command-line interface and
-   Zenodo-hosted weights and datasets.
+
+The atlas integrates three key types of information, which correspond
+to sections in the web interface:
+
+1. Experimental evidence (LigABPP)
+   - Manually curated cysteine-directed activity-based protein
+     profiling (ABPP) measurements from the LigABPP database (as
+     described in the manuscript).
+   - Provides both site-level and cluster-level experimental evidence
+     of cysteine ligandability across multiple studies.
+   - These data can be viewed alongside AiPP model scores to assess
+     concordance between experimental measurements and model
+     predictions.
+
+2. Homologous residue clusters
+   - Cysteine sites are grouped using a composite similarity score in
+     protein language model (PLM) embedding space.
+   - Each panel groups residues that are homologous under this
+     embedding; all residues in a cluster are treated as a single unit
+     and are never split across train / validation / test partitions.
+
+3. Homology-linked protein clusters
+   - Proteins are grouped so that they remain together in any
+     train / validation / test split.
+   - Groups are formed by (i) never splitting an individual protein
+     across partitions and (ii) linking proteins that share at least
+     one cysteine in the same PLM-based residue cluster.
+   - All proteins in a group are therefore assigned to the same data
+     partition, ensuring that closely related proteins and residues
+     do not leak across splits.
 
 The home page at:
 
