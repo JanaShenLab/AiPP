@@ -308,7 +308,6 @@ The CLI echoes the full command line used to invoke it immediately
 after the splash screen. This makes it straightforward to record and
 reproduce runs from logs or publications.
 
-------------------------------------------------------------
 # Archived artifacts (immutable, citable)
 
 - **LigCys ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210112` 
