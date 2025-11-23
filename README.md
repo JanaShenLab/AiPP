@@ -310,7 +310,6 @@ reproduce runs from logs or publications.
 
 ------------------------------------------------------------
 # Archived artifacts (immutable, citable)
-------------------------------------------------------------
 
 - **LigCys ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210112` 
 - **LigBind ensemble weights v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17210749`
