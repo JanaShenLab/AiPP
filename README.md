@@ -48,7 +48,8 @@ Obtaining an ESM Forge API token:
        https://forge.evolutionaryscale.ai
 
 2. Sign up or sign in with your account.
-3. Navigate to the account / API / Console section.
+3. In the leftmost menu, under the API header select 'API Keys'
+4. In the textbox with the 'API Key Name' placehold text, name your key, e.g. aipp
 4. Create a new Forge API token and copy the token string.
 
 Treat this token as a secret (similar to a password); do not publish
