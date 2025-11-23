@@ -194,11 +194,3 @@ Each subsequent line corresponds to a residue position.
 The CLI echoes the full command line used to invoke it immediately
 after the splash screen. This makes it straightforward to record and
 reproduce runs from logs or publications.
-
-For publication or archival use (e.g. Zenodo), store:
-
-- the exact repository commit
-- the weights archive (Zenodo DOI)
-- the command line used for each run
-
-
