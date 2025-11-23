@@ -25,13 +25,7 @@ Plain English: You may copy, adapt, and share the repositories content for non-c
   
 - **Annotated/complete structures used to construct LigBind3D v1.0.0 (Zenodo)** — DOI: `10.5281/zenodo.17209968`
 
----
-<br>
-<br>
-<br>
-
 # Command-line Inference Interface 
-
 Command-line interface for running AiPP residue-level predictions
 (SSBind, LigBind, ZNBind, LigCys) on protein sequences using ESM-C
 embeddings and pre-trained weights.
