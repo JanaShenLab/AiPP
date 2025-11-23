@@ -235,6 +235,8 @@ and the CLI will use that directory instead of env/wts/.
 
 The CLI requires an ESM Forge token to compute ESM-C embeddings.
 
+- To obtain an ESM Forge token see Web-based inference.
+
 Token handling:
 
 1. First run:
