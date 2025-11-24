@@ -340,7 +340,7 @@ def extract_esmc_layer(
 
     prot = ESMProtein(
         sequence=seq,
-        potential_sequence_of_concern=True,
+        potential_sequence_of_concern=False,
     )
     protein_tensor = retry_operation(
         lambda: client.encode(prot),
