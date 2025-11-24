@@ -183,6 +183,7 @@ embeddings and pre-trained weights.
 ## Requirements
 
 - NVIDIA GPU with >= 24GB VRAM (e.g. RTX 4090)
+- 40 GB disk space
 - 128 GB system memory
 - Python 3.10 or newer
 - POSIX-like environment (Linux / macOS)
