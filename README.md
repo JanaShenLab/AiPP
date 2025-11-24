@@ -207,7 +207,7 @@ or use the provided wizard.
 
 Clone the repository:
 
-    git clone https://github.com/wayyne/aippCLI.git
+    git clone https://github.com/JanaShenLab/AiPP_v1.git
     cd aippCLI
 
 Run the installation wizard:
