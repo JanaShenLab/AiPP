@@ -35,22 +35,50 @@ wget https://zenodo.org/records/17693713/files/ligbind_v1.tar.xz
 echo "Extracting LigBind weights: this could take a few minutes"
 tar -xJf ligbind_v1.tar.xz
 
-#ssbind
+#ssbind!
 echo "Fetching SSBind weights: this could take a few minutes"
-wget https://zenodo.org/records/17693474/files/ssbind_v1.tar.xz
+wget https://zenodo.org/records/19052467/files/ssbind_v1.tar.gz
 echo "Extracting SSBind weights: this could take a few minutes"
-tar -xJf ssbind_v1.tar.xz
+tar -xvzf ssbind_v1.tar.gz
 
-#znbind
+#znbind!
 echo "Fetching ZNBind weights: this could take a few minutes"
-wget https://zenodo.org/records/17692131/files/znbind_v1.tar.xz
+wget https://zenodo.org/records/19051390/files/znbind_v1.tar.gz
 echo "Extracting ZNBind weights: this could take a few minutes"
-tar -xJf znbind_v1.tar.xz
+tar -xvzf znbind_v1.tar.gz
+
+#cubind!
+echo "Fetching CUBind weights: this could take a few minutes"
+wget https://zenodo.org/records/19051708/files/cubind_v1.tar.gz
+echo "Extracting CUBind weights: this could take a few minutes"
+tar -xvzf cubind_v1.tar.gz
+
+#febind!
+echo "Fetching FEBind weights: this could take a few minutes"
+wget https://zenodo.org/records/19052041/files/febind_v1.tar.gz
+echo "Extracting FEBind weights: this could take a few minutes"
+tar -xvzf febind_v1.tar.gz
+
+#fesbind --
+echo "Fetching FeSBind weights: this could take a few minutes"
+wget https://zenodo.org/records/19052104/files/fesbind_v1.tar.gz
+echo "Extracting FeSBind weights: this could take a few minutes"
+tar -xvzf fesbind_v1.tar.gz
+
+#hembind --
+echo "Fetching HEMBind weights: this could take a few minutes"
+wget https://zenodo.org/records/19052343/files/hembind_v1.tar.gz
+echo "Extracting HEMBind weights: this could take a few minutes"
+tar -xvzf hembind_v1.tar.gz
 
 #housekeeping
 echo "Peforming housekeeping"
 rm ligcysS_v1.tar.xz
 rm ligcysA_v1.tar.xz
 rm ligbind_v1.tar.xz
-rm ssbind_v1.tar.xz
-rm znbind_v1.tar.xz
+rm ssbind_v1.tar.gz
+rm znbind_v1.tar.gz
+rm cubind_v1.tar.gz
+rm febind_v1.tar.gz
+rm fesbind_v1.tar.gz
+rm hembind_v1.tar.gz
