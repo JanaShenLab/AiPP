@@ -186,7 +186,7 @@ embeddings and pre-trained weights.
 - NVIDIA GPU with >= 24GB VRAM (e.g. RTX 4090)
 - 40 GB disk space
 - 128 GB system memory
-- Python 3.10 or newer
+- Python 3.10 or newer with venv module (python virtual environments)
 - POSIX-like environment (Linux / macOS)
 - Packages:
   - numpy
