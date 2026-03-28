@@ -1392,13 +1392,9 @@ def run_ligcys_once(
         use_tertiary=LIGCYS_CGRV_USE_TERTIARY,
     )
 
-    print("oneoff positions:", positions.tolist())
-    print("oneoff top1:", np.argmax(probs_mat, axis=0).tolist())
     cgrv_res = cgrv_votes_for_protein(probs_mat, params=params)
-    print("oneoff primary_raw:", cgrv_res.votes_primary_raw.tolist())
-    print("oneoff secondary:", cgrv_res.votes_secondary.tolist())
-    print("oneoff tertiary:", cgrv_res.votes_tertiary.tolist())
 
+    top1 = np.argmax(probs_mat, axis=0)
 
     log_info(
         f"[{seq_id}] LigCys: running CGRV across {n_models} model "
