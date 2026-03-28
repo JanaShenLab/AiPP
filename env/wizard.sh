@@ -19,7 +19,7 @@ cd wts
 
 #ligcysS
 echo "Fetching LigCys-S weights: this could take a few minutes"
-wget https://zenodo.org/records/19295949/files/ligcysA_v1.tar.gz
+wget https://zenodo.org/records/19295949/files/ligcysS_v1.tar.gz
 echo "Extracting LigCys-S weights: this could take a few minutes"
 tar -xvzf ligcysS_v1.tar.gz
 
