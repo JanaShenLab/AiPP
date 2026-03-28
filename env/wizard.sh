@@ -15,7 +15,7 @@ pip install -U pip
 pip install numpy torch esm tqdm httpx colorama
 
 #download wts from zenodo
-cd wts
+cd env/wts
 
 #ligcysS
 echo "Fetching LigCys-S weights: this could take a few minutes"
