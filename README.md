@@ -1,7 +1,7 @@
 # AiPP: Artificial Intelligence Protein Profiling
 
 Companion repository for:
--  Dayhoff II, Guy W., Kortzak, Daniel, et al. "Illuminating the Druggable Human Proteome with an AI Protein Profiling Platform." bioRxiv (2025): 2025-09. (https://www.biorxiv.org/content/10.1101/2025.09.07.670677v2)
+-  Dayhoff II, Guy W., Kortzak, Daniel, et al. "Illuminating the Ligandable Human Proteome with AI Protein Profiling." bioRxiv (2025): 2025-09. (https://www.biorxiv.org/content/10.1101/2025.09.07.670677v2)
 
 ## How to cite AiPP
 
@@ -9,13 +9,13 @@ If you use the AiPP models, command-line interface, or web-based atlas
 in your work, please cite:
 
     Dayhoff II, Guy W., Daniel Kortzak, Ruibin Liu, Mingzhe Shen,
-    Zhong-Yin Zhang, and Jana Shen. "Illuminating the Druggable Human
-    Proteome with an AI Protein Profiling Platform." bioRxiv (2025).
+    Zhong-Yin Zhang, and Jana Shen. "Illuminating the Ligandable Human
+    Proteome with AI Protein Profiling." bioRxiv (2025).
 
 BibTeX:
 
     @article{dayhoff2025illuminating,
-      title={Illuminating the Druggable Human Proteome with an AI Protein Profiling Platform},
+      title={Illuminating the Ligandable Human Proteome with AI Protein Profiling},
       author={Dayhoff, Guy W and Kortzak, Daniel and Liu, Ruibin and Shen, Mingzhe and Zhang, Zhong-Yin and Shen, Jana},
       journal={bioRxiv},
       pages={2025--09},
@@ -35,11 +35,12 @@ Plain English: You may copy, adapt, and share the repository’s content for non
 
 We provide a browser-based AiPP interface for both on-demand
 predictions and interactive exploration of a precomputed human
-proteome atlas:
+proteome atlas along with the manually curated LigCysABPP database:
 
-    Home:      https://aipp.computchem.org
-    Inference: https://aipp.computchem.org/#predict
-    Atlas:     https://aipp.computchem.org/#explore
+    Home:       https://aipp.computchem.org
+    Inference:  https://aipp.computchem.org/#predict
+    Atlas:      https://aipp.computchem.org/#explore
+    LigCysABPP: https://aipp.computchem.org/#inspect
 
 The web tools run the same AiPP models described in the manuscript and
 use ESM-C (`esmc-6b-2024-12`) via the EvolutionaryScale Forge API for
@@ -96,7 +97,7 @@ Precomputed human AiPP atlas: /#explore
 ------------------------------------------------------------
 
 The `/#explore` view provides interactive access to a precomputed
-AiPP “human atlas” of predictions across the druggable human proteome.
+AiPP “human atlas” of predictions across the ligandable human proteome.
 
 Key points:
 
@@ -318,7 +319,7 @@ At the end of the run you will see:
 
 The first line of the file is a header:
 
-    pos    AA    SSBind    SSBind_topN    LigBind    LigBind_topN ...
+    pos     AA      LigCys  LigCys_topN     LigCys_confidence       SSBind  SSBind_bin      ZnBind  ZnBind_bin      CuBind  CuBind_bin      FeBind  FeBind_bin      FeSBind FeSBind_bin     HemeBind        HemeBind_bin    LigBind LigBind_topN
     ...
 
 Each subsequent line corresponds to a residue position.
@@ -338,7 +339,11 @@ Pre-trained Ensemble Weights:
 - **LigCys ensemble weights v1.0.0 (Zenodo)** — DOI: `https://doi.org/10.5281/zenodo.17210111` 
 - **LigBind ensemble weights v1.0.0 (Zenodo)** — DOI: `https://doi.org/10.5281/zenodo.17210748`
 - **SSBind ensemble weights v1.0.0 (Zenodo)** - DOI: `https://doi.org/10.5281/zenodo.17693473`
-- **ZNBind ensemble weights v1.0.0 (Zenodo)** - DOI: `https://doi.org/10.5281/zenodo.17692130`
+- **ZnBind ensemble weights v1.0.0 (Zenodo)** - DOI: `https://doi.org/10.5281/zenodo.17692130`
+- **CuBind ensemble weights v1.0.0 (Zenodo)** - DOI: `https://doi.org/10.5281/zenodo.19051708`
+- **FeBind ensemble weights v1.0.0 (Zenodo)** - DOI: `https://doi.org/10.5281/zenodo.19052041`
+- **FeSBind ensemble weights v1.0.0 (Zenodo)** - DOI: `https://doi.org/10.5281/zenodo.19052104`
+- **HemeBind ensemble weights v1.0.0 (Zenodo)** - DOI: `https://doi.org/10.5281/zenodo.19052343`
 
  
 Pre-extracted ESMC embeddings:
