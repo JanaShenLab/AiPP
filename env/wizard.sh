@@ -19,15 +19,15 @@ cd wts
 
 #ligcysS
 echo "Fetching LigCys-S weights: this could take a few minutes"
-wget https://zenodo.org/records/17693548/files/ligcysS_v1.tar.xz
+wget https://zenodo.org/records/19295949/files/ligcysA_v1.tar.gz
 echo "Extracting LigCys-S weights: this could take a few minutes"
-tar -xJf ligcysS_v1.tar.xz
+tar -xvzf ligcysS_v1.tar.gz
 
 #ligcysA
 echo "Fetching LigCys-A weights: this could take a few minutes"
-wget https://zenodo.org/records/17693548/files/ligcysA_v1.tar.xz
+wget https://zenodo.org/records/19295949/files/ligcysA_v1.tar.gz
 echo "Extracting LigCys-A weights: this could take a few minutes"
-tar -xJf ligcysA_v1.tar.xz
+tar -xvzf ligcysA_v1.tar.gz
 
 #ligbind
 echo "Fetching LigBind weights: this could take a few minutes"
@@ -73,8 +73,8 @@ tar -xvzf hembind_v1.tar.gz
 
 #housekeeping
 echo "Peforming housekeeping"
-rm ligcysS_v1.tar.xz
-rm ligcysA_v1.tar.xz
+rm ligcysS_v1.tar.gz
+rm ligcysA_v1.tar.gz
 rm ligbind_v1.tar.xz
 rm ssbind_v1.tar.gz
 rm znbind_v1.tar.gz
