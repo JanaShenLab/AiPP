@@ -221,8 +221,7 @@ The wizard:
 - activates it
 - upgrades pip
 - installs core Python dependencies
-- is the place to add commands to download weights from Zenodo into
-  env/wts/
+- download ensemble weights from Zenodo into env/wts
 
 To re-activate the environment later:
 
