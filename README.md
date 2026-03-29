@@ -31,7 +31,7 @@ Unless otherwise noted, this repository’s content is © 2025 Guy W. Dayhoff II
 
 Plain English: You may copy, adapt, and share the repository’s content for non-commercial purposes as long as you provide proper attribution. For any commercial use, please contact the authors for permission.
 
-# Web-based Inference and Atlas Exploration
+# Web-based Inference, Atlas Exploration, and LigCysABPP Inspection.
 
 We provide a browser-based AiPP interface for both on-demand
 predictions and interactive exploration of a precomputed human
@@ -118,46 +118,31 @@ Typical usage:
 
 2. Search or browse for a protein of interest by UniProtKB accession
    or gene name.
-3. Inspect the per-residue AiPP scores (LigCys, LigBind, SSBind,
+3. Inspect the per-residue AiPP predictions (LigCys, LigBind, SSBind,
    ZNBind, etc.) and any additional annotations provided.
 
-The atlas integrates three key types of information, which correspond
-to sections in the web interface:
+------------------------------------------------------------
+Manually curated LigCysABPP database: /#inspect
+------------------------------------------------------------
 
-1. Experimental evidence (LigABPP)
-   - Manually curated cysteine-directed activity-based protein
-     profiling (ABPP) measurements from the LigABPP database (as
-     described in the manuscript).
-   - Provides both site-level and cluster-level experimental evidence
-     of cysteine ligandability across multiple studies.
-   - These data can be viewed alongside AiPP model scores to assess
-     concordance between experimental measurements and model
-     predictions.
+The `/#inspect` view provides interactive access to the manually curated
+LigCysABPP database comprising experimental evidence across 15 publications.
 
-2. Homologous residue clusters
-   - Cysteine sites are grouped using a composite similarity score in
-     protein language model (PLM) embedding space.
-   - Each panel groups residues that are homologous under this
-     embedding; all residues in a cluster are treated as a single unit
-     and are never split across train / validation / test partitions.
+Typical usage:
 
-3. Homology-linked protein clusters
-   - Proteins are grouped so that they remain together in any
-     train / validation / test split.
-   - Groups are formed by (i) never splitting an individual protein
-     across partitions and (ii) linking proteins that share at least
-     one cysteine in the same PLM-based residue cluster.
-   - All proteins in a group are therefore assigned to the same data
-     partition, ensuring that closely related proteins and residues
-     do not leak across splits.
+1. Open:
+
+       https://aipp.computchem.org/#inspect
+
+2. Search or browse for a protein of interest by UniProtKB accession
+   or gene name.
+3. Inspect the per-cysteine experimental evidence.
 
 The home page at:
 
     https://aipp.computchem.org
 
-provides a consolidated entry point to both the prediction interface
-and the human atlas, along with brief explanatory text about the AiPP
-platform.
+provides a consolidated entry point to both prediction interface, the precomputed human atlas, and the manually curated LigCysABPP database. 
 
 # Command-line Inference Interface 
 Command-line interface for running AiPP residue-level predictions
